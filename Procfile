@@ -1,1 +1,1 @@
-web: python sentimentor.py
+web: python main.py
