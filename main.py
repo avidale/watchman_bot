@@ -3,8 +3,10 @@
 import telebot
 import os
 import time
+from datetime import datetime
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
@@ -17,7 +19,7 @@ DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///watchman_local.db')
 
 server.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 db = SQLAlchemy(server)
-
+migrate = Migrate(server, db)
 
 THE_QUESTIONS = [
     "Остановись!",
@@ -31,9 +33,11 @@ class StoredMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Unicode())
     user_id = db.Column(db.Integer)
+    from_user = db.Column(db.Boolean)
+    process_time = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return '<Message "{}" from "{}">'.format(self.text, self.user_id)
+        return '<Message "{}" {} "{}" at {}>'.format(self.text, "from" if self.from_user else "to", self.user_id, self.process_time)
         
         
 class StoredUser(db.Model):
@@ -59,15 +63,20 @@ def wake_up():
         for utterance in THE_QUESTIONS:
             bot.send_message(user.user_id, utterance)
             time.sleep(0.01)
+            msg = StoredMessage(text=utterance, user_id=user.user_id, from_user=False)
+            db.session.add(msg)
+    db.session.commit()
     return "Маам, ну ещё пять минуточек!", 200
 
 
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
-    msg = StoredMessage(text=message.text, user_id=message.chat.id)
+    msg = StoredMessage(text=message.text, user_id=message.chat.id, from_user=True)
     print(msg)
     db.session.add(msg)
-    db.session.commit()
+    response = "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
+    db.session.add(StoredMessage(text=response, user_id=message.chat.id, from_user=False))
+    bot.reply_to(message, response)
     print('total number of messages: {}'.format(
         len(StoredMessage.query.all()))
     )
@@ -77,8 +86,8 @@ def process_message(message):
     else:
         new_user = StoredUser(user_id=message.chat.id)
         db.session.add(new_user)
-        db.session.commit()
         print("added user '{}'".format(new_user))
+    db.session.commit()
 
 
 if __name__ == '__main__':
