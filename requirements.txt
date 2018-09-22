@@ -1,3 +1,4 @@
 pytelegrambotapi
 psycopg2
 flask
+flask-sqlalchemy
