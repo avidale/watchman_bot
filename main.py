@@ -53,6 +53,7 @@ def web_hook():
 
 @server.route("/wakeup/")
 def wake_up():
+    web_hook()
     for user in StoredUser.query.all():
         print("Writing to user '{}'".format(user.user_id))
         for utterance in THE_QUESTIONS:
