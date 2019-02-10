@@ -3,6 +3,7 @@
 import telebot
 import os
 import time
+import random
 from datetime import datetime
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -27,6 +28,8 @@ THE_QUESTIONS = [
     "Откуда ты?",
     "Куда ты идёшь?"
 ]
+with open('many_questions.txt', 'r', encoding='utf-8') as f:
+    LONGLIST = list(f.readlines())
 
 
 class StoredMessage(db.Model):
@@ -60,34 +63,43 @@ def wake_up():
     web_hook()
     for user in StoredUser.query.all():
         print("Writing to user '{}'".format(user.user_id))
+        """
         for utterance in THE_QUESTIONS:
             bot.send_message(user.user_id, utterance)
             time.sleep(0.01)
             msg = StoredMessage(text=utterance, user_id=user.user_id, from_user=False)
             db.session.add(msg)
+        """
+        utterance = random.choice(LONGLIST)
+        bot.send_message(user.user_id, utterance)
+        #msg = StoredMessage(text=utterance, user_id=user.user_id, from_user=False)
+        #db.session.add(msg)
     db.session.commit()
     return "Маам, ну ещё пять минуточек!", 200
 
 
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
-    msg = StoredMessage(text=message.text, user_id=message.chat.id, from_user=True)
-    print(msg)
-    db.session.add(msg)
-    response = "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
-    db.session.add(StoredMessage(text=response, user_id=message.chat.id, from_user=False))
-    bot.reply_to(message, response)
-    print('total number of messages: {}'.format(
-        len(StoredMessage.query.all()))
-    )
-    found_user = StoredUser.query.filter_by(user_id=message.chat.id).first()
-    if found_user:
-        print("found existing user '{}'".format(found_user))
+    #msg = StoredMessage(text=message.text, user_id=message.chat.id, from_user=True)
+    #print(msg)
+    #db.session.add(msg)
+    if message.text == 'вопросик пожалуйста':
+        response = random.choice(LONGLIST)
     else:
-        new_user = StoredUser(user_id=message.chat.id)
-        db.session.add(new_user)
-        print("added user '{}'".format(new_user))
-    db.session.commit()
+        response = "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
+    #db.session.add(StoredMessage(text=response, user_id=message.chat.id, from_user=False))
+    bot.reply_to(message, response)
+    #print('total number of messages: {}'.format(
+    #    len(StoredMessage.query.all()))
+    #)
+    #found_user = StoredUser.query.filter_by(user_id=message.chat.id).first()
+    #if found_user:
+    #    print("found existing user '{}'".format(found_user))
+    #else:
+    #    new_user = StoredUser(user_id=message.chat.id)
+    #    #db.session.add(new_user)
+    #    print("added user '{}'".format(new_user))
+    #db.session.commit()
 
 
 if __name__ == '__main__':
