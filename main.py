@@ -6,7 +6,7 @@ import os
 import time
 import random
 from datetime import datetime
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -101,6 +101,12 @@ def process_message(message):
     #    #db.session.add(new_user)
     #    print("added user '{}'".format(new_user))
     #db.session.commit()
+
+
+@server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])
+def get_message():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
 
 
 def main_old():
