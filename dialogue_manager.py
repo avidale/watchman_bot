@@ -1,5 +1,6 @@
 from telebot import types
-
+import requests
+import json
 
 def make_suggests():
     texts = [
@@ -23,4 +24,10 @@ def classify_text(text):
 
 
 def reply_with_boltalka(text):
-    return "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
+    # return "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
+    r = requests.post(
+        "https://matchast-chatbot.herokuapp.com/boltalka_api",
+        data=json.dumps({'utterance': text}),
+        headers={'content-type': 'application/json'}
+    )
+    return json.loads(r.text)['response']
