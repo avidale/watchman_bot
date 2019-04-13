@@ -7,6 +7,7 @@ import random
 from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
+from dialogue_manager import classify_text, make_suggests, reply_with_boltalka
 
 ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
@@ -56,7 +57,7 @@ def web_hook():
 
 @server.route("/wakeup/")
 def wake_up():
-    # web_hook()
+    web_hook()
     for user in mongo_users.find():
         user_id = user.get('tg_id')
         if not user_id or not user.get('subscribed'):
@@ -80,15 +81,23 @@ def wake_up():
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
     try_insert_user(message.from_user)
-    msg = dict(text=message.text, user_id=message.chat.id, from_user=True, timestamp=str(datetime.utcnow()))
+    user_id = message.chat.id
+    msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
     mongo_messages.insert_one(msg)
-    if message.text == 'вопросик пожалуйста':
+    intent = classify_text(message.text)
+    if intent == 'want_question':
         response = random.choice(LONGLIST)
+    elif intent == 'subscribe':
+        mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': True}})
+        response = "Теперь вы подписаны на ежедневные вопросы!"
+    elif intent == 'unsubscribe':
+        mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': False}})
+        response = "Теперь вы отписаны от ежедневных вопросов!"
     else:
-        response = "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
-    msg = dict(text=response, user_id=message.chat.id, from_user=False, timestamp=str(datetime.utcnow()))
+        response = reply_with_boltalka(message.text)
+    msg = dict(text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
     mongo_messages.insert_one(msg)
-    bot.reply_to(message, response)
+    bot.reply_to(message, response, reply_markup=make_suggests())
 
 
 @server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])
