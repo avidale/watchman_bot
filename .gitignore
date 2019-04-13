@@ -102,3 +102,6 @@ ENV/
 
 .idea/
 migrations/
+
+.ipyng_checkpoints
+pymongo.ipynb
