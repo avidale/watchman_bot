@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import argparse
 import telebot
 import os
 import time
@@ -102,7 +103,7 @@ def process_message(message):
     #db.session.commit()
 
 
-if __name__ == '__main__':
+def main_old():
     db.create_all()
     if ON_HEROKU:
         # get the heroku port
@@ -118,3 +119,22 @@ if __name__ == '__main__':
     else:
         bot.remove_webhook()
         bot.polling()
+
+
+parser = argparse.ArgumentParser(description='Run the bot')
+parser.add_argument('--poll', action='store_true')
+
+
+def main_new():
+    args = parser.parse_args()
+    if args.poll:
+        bot.remove_webhook()
+        bot.polling()
+    else:
+        # this branch is intended to run only in the production environment (e.g. Heroku web app)
+        server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+        web_hook()
+
+
+if __name__ == '__main__':
+    main_old()
