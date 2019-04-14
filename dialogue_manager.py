@@ -1,9 +1,13 @@
-from telebot import types
-import requests
 import json
+import re
+import requests
+
+from telebot import types
 
 
 class Intents:
+    GROW_COACH = 'grow_coach'
+    GROW_COACH_INTRO = 'grow_coach_intro'
     HELP = 'help'
     INTRO = 'intro'
     PARABLE = 'parable'
@@ -18,6 +22,7 @@ REPLY_HELP = """
 Я создан, чтобы регулярно задавать вам вопросы. 
 Какие-то из них могут оказаться для вас важными.
 Доступные команды:
+/coach - запустить сессию коучинга
 /help - прочитать это сообщение
 /subscribe - подписаться на ежедневные вопросы
 /unsubscribe - отписаться от ежедневных вопросов
@@ -53,6 +58,8 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None):
 
 
 def classify_text(text, user_object=None):
+    if user_object is None:
+        user_object = {}
     # fast commands
     if text == '/help':
         return Intents.HELP
@@ -62,6 +69,12 @@ def classify_text(text, user_object=None):
         return Intents.UNSUBSCRIBE
     if text == '/start':
         return Intents.INTRO
+    if text == '/coach':
+        return Intents.GROW_COACH_INTRO
+    # continue intents
+    if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
+        if user_object.get('coach_state').get('is_active'):
+            return Intents.GROW_COACH
     # substrings
     if 'подпис' in text.lower():
         return Intents.SUBSCRIBE

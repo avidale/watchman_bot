@@ -9,6 +9,7 @@ from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
+from grow import reply_with_coach
 
 ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
@@ -56,7 +57,12 @@ THE_QUESTIONS = [
     "Куда ты идёшь?"
 ]
 with open('many_questions.txt', 'r', encoding='utf-8') as f:
-    LONGLIST = list(f.readlines())
+    LONGLIST = [
+        q for q in f.readlines()
+        if not q.strip().startswith('#')
+           and not q.strip().startswith('/')
+           and len(q.strip()) >= 5
+    ]
 
 
 @server.route("/" + TELEBOT_URL)
@@ -69,6 +75,7 @@ def web_hook():
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
+    # todo: decide what to do if the update interferes with the current dialogue
     for user in mongo_users.find():
         user_id = user.get('tg_id')
         if not user_id or not user.get('subscribed'):
@@ -95,7 +102,8 @@ def process_message(message):
     user_id = message.chat.id
     msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
     mongo_messages.insert_one(msg)
-    intent = classify_text(message.text)
+    intent = classify_text(message.text, user_object=user_object)
+    the_update = None
     if intent == Intents.HELP:
         response = dialogue_manager.REPLY_HELP
     elif intent == Intents.INTRO:
@@ -103,15 +111,25 @@ def process_message(message):
     elif intent == Intents.WANT_QUESTION:
         response = random.choice(LONGLIST)
     elif intent == Intents.SUBSCRIBE:
-        mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': True}})
         response = "Теперь вы подписаны на ежедневные вопросы!"
-        user_object = get_or_insert_user(message.from_user)
+        the_update = {"$set": {'subscribed': True}}
     elif intent == Intents.UNSUBSCRIBE:
-        mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': False}})
         response = "Теперь вы отписаны от ежедневных вопросов!"
-        user_object = get_or_insert_user(message.from_user)
+        the_update = {"$set": {'subscribed': False}}
+    elif intent == Intents.GROW_COACH_INTRO or intent == Intents.GROW_COACH:
+        response, the_update = reply_with_coach(message.text, user_object)
     else:
-        response = reply_with_boltalka(message.text)
+        response = reply_with_boltalka(message.text, user_object)
+
+    # todo: unconditionally, update the prev_intent - needed for classification
+    if the_update is None:
+        the_update = {}
+    if '$set' not in the_update:
+        the_update['$set'] = {}
+    the_update['$set']['last_intent'] = intent
+    mongo_users.update_one({'tg_id': message.from_user.id}, the_update)
+    user_object = get_or_insert_user(tg_uid=message.from_user.id)
+
     msg = dict(text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
     # todo: log the previous message id
     mongo_messages.insert_one(msg)
