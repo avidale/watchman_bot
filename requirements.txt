@@ -4,4 +4,4 @@ flask
 flask-sqlalchemy
 Flask-Migrate
 pymongo==3.4.0
-yaml
+pyyaml
