@@ -4,10 +4,11 @@ import argparse
 import telebot
 import os
 import random
+import dialogue_manager
 from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
-from dialogue_manager import classify_text, make_suggests, reply_with_boltalka
+from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 
 ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
@@ -25,17 +26,27 @@ mongo_users = mongo_db.get_collection('users')
 mongo_messages = mongo_db.get_collection('messages')
 
 
-def try_insert_user(tg_bot_user):
-    found = mongo_users.find_one({'tg_id': tg_bot_user.id})
+def get_or_insert_user(tg_user=None, tg_uid=None):
+    if tg_user is not None:
+        uid = tg_user.id
+    elif tg_uid is not None:
+        uid = tg_uid
+    else:
+        return None
+    found = mongo_users.find_one({'tg_id': uid})
     if found is not None:
-        return
-    mongo_users.insert_one(dict(
-        tg_id=tg_bot_user.id,
-        first_name=tg_bot_user.first_name,
-        last_name=tg_bot_user.last_name,
-        username=tg_bot_user.username,
+        return found
+    if tg_user is None:
+        return ValueError('User should be created, but telegram user object was not provided.')
+    new_user = dict(
+        tg_id=tg_user.id,
+        first_name=tg_user.first_name,
+        last_name=tg_user.last_name,
+        username=tg_user.username,
         subscribed=True  # todo: ask for subscription
-    ))
+    )
+    mongo_users.insert_one(new_user)
+    return new_user
 
 
 THE_QUESTIONS = [
@@ -85,17 +96,21 @@ def process_message(message):
     msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
     mongo_messages.insert_one(msg)
     intent = classify_text(message.text)
-    if intent == 'want_question':
+    if intent == Intents.HELP:
+        response = dialogue_manager.REPLY_HELP
+    elif intent == Intents.WANT_QUESTION:
         response = random.choice(LONGLIST)
-    elif intent == 'subscribe':
+    elif intent == Intents.SUBSCRIBE:
         mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': True}})
         response = "Теперь вы подписаны на ежедневные вопросы!"
-    elif intent == 'unsubscribe':
+    elif intent == Intents.UNSUBSCRIBE:
         mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': False}})
         response = "Теперь вы отписаны от ежедневных вопросов!"
     else:
         response = reply_with_boltalka(message.text)
+    user_object = mongo_users.find_one()
     msg = dict(text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
+    # todo: log the previous message id
     mongo_messages.insert_one(msg)
     bot.reply_to(message, response, reply_markup=make_suggests())
 
