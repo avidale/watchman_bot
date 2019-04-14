@@ -91,7 +91,7 @@ def wake_up():
 
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
-    try_insert_user(message.from_user)
+    user_object = get_or_insert_user(message.from_user)
     user_id = message.chat.id
     msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
     mongo_messages.insert_one(msg)
@@ -103,16 +103,18 @@ def process_message(message):
     elif intent == Intents.SUBSCRIBE:
         mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': True}})
         response = "Теперь вы подписаны на ежедневные вопросы!"
+        user_object = get_or_insert_user(message.from_user)
     elif intent == Intents.UNSUBSCRIBE:
         mongo_users.update_one({'tg_id': user_id}, {"$set": {'subscribed': False}})
         response = "Теперь вы отписаны от ежедневных вопросов!"
+        user_object = get_or_insert_user(message.from_user)
     else:
         response = reply_with_boltalka(message.text)
-    user_object = mongo_users.find_one()
     msg = dict(text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
     # todo: log the previous message id
     mongo_messages.insert_one(msg)
-    bot.reply_to(message, response, reply_markup=make_suggests())
+    suggests = make_suggests(text=response, intent=intent, user_object=user_object)
+    bot.reply_to(message, response, reply_markup=suggests)
 
 
 @server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])

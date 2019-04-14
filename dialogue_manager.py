@@ -28,7 +28,7 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None):
     texts = [
         'Хочу вопрос!'
     ]
-    if user_object.get('is_subscribed'):
+    if user_object.get('subscribed'):
         texts.append('Отписаться'),
     else:
         texts.append('Подписаться')
