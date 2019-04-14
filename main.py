@@ -98,6 +98,8 @@ def process_message(message):
     intent = classify_text(message.text)
     if intent == Intents.HELP:
         response = dialogue_manager.REPLY_HELP
+    elif intent == Intents.INTRO:
+        response = dialogue_manager.REPLY_HELP + '\n' + dialogue_manager.REPLY_INTRO
     elif intent == Intents.WANT_QUESTION:
         response = random.choice(LONGLIST)
     elif intent == Intents.SUBSCRIBE:

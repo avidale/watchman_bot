@@ -5,6 +5,8 @@ import json
 
 class Intents:
     HELP = 'help'
+    INTRO = 'intro'
+    PARABLE = 'parable'
     SUBSCRIBE = 'subscribe'
     UNSUBSCRIBE = 'unsubscribe'
     WANT_QUESTION = 'want_question'
@@ -20,6 +22,18 @@ REPLY_HELP = """
 /subscribe - подписаться на ежедневные вопросы
 /unsubscribe - отписаться от ежедневных вопросов
 Если вы подпишетесь, вопросы будут приходить каждый вечер, в 21.30 по Московскому времени.
+"""
+
+REPLY_INTRO = """
+Когда-то давно, тысячу лет назад, а может быть две, в один азиатский город пришёл путник. 
+У врат его остановил стражник, и задал три вопроса:
+- Кто ты? Откуда ты? И куда ты идёшь?
+- Сколько тебе платят за твою работу? - спросил путник вместо ответа. 
+- Две корзины риса в день
+- Я буду платить тебе четыре корзины риса, если ты будешь задавать мне эти вопросы каждый день.
+
+Я тоже в каком-то смысле стражник, и был создан по мотивам этой притчи. 
+Но я ещё и бот, и поэтому мне даже не нужен рис. 
 """
 
 
@@ -38,14 +52,16 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None):
     return markup
 
 
-def classify_text(text):
+def classify_text(text, user_object=None):
     # fast commands
-    if text == '/help' or text == '/start':
+    if text == '/help':
         return Intents.HELP
     if text == '/subscribe':
         return Intents.SUBSCRIBE
     if text == '/unsubscribe':
         return Intents.UNSUBSCRIBE
+    if text == '/start':
+        return Intents.INTRO
     # substrings
     if 'подпис' in text.lower():
         return Intents.SUBSCRIBE
@@ -57,8 +73,7 @@ def classify_text(text):
     return Intents.OTHER
 
 
-def reply_with_boltalka(text):
-    # return "Я пока что не обладаю памятью, но я буду писать вам каждый вечер. Это моя работа."
+def reply_with_boltalka(text, user_object=None):
     r = requests.post(
         "https://matchast-chatbot.herokuapp.com/boltalka_api",
         data=json.dumps({'utterance': text}),
