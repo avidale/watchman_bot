@@ -44,7 +44,7 @@ def classify_text(text):
         return Intents.HELP
     if text == '/subscribe':
         return Intents.SUBSCRIBE
-    if text == 'unsubscribe':
+    if text == '/unsubscribe':
         return Intents.UNSUBSCRIBE
     # substrings
     if 'подпис' in text.lower():
