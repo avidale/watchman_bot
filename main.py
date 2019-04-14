@@ -116,8 +116,8 @@ def process_message(message):
     elif intent == Intents.UNSUBSCRIBE:
         response = "Теперь вы отписаны от ежедневных вопросов!"
         the_update = {"$set": {'subscribed': False}}
-    elif intent == Intents.GROW_COACH_INTRO or intent == Intents.GROW_COACH:
-        response, the_update = reply_with_coach(message.text, user_object)
+    elif intent == Intents.GROW_COACH_INTRO or intent == Intents.GROW_COACH or intent == Intents.GROW_COACH_EXIT:
+        response, the_update = reply_with_coach(message.text, user_object=user_object, intent=intent)
     else:
         response = reply_with_boltalka(message.text, user_object)
 

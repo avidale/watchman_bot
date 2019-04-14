@@ -1,6 +1,7 @@
 import yaml
 import random
 
+from dialogue_manager import Intents
 
 COACH_INTRO = """Окей! Сейчас я задам 7-10 вопросов, которые помогут вам достичь цели."""
 
@@ -70,18 +71,21 @@ with open('data/grow.yaml', 'r', encoding='utf-8') as f:
     QUIZ = preprocess_quiz(yaml.load(f))
 
 
-def reply_with_coach(text, user_object=None):
+def reply_with_coach(text, user_object=None, intent=None):
     if user_object is None:
         user_object = {}
     coach_state = user_object.get('coach_state', {})
-    if not coach_state.get('is_active'):
-        coach_state['is_active'] = True
+    if intent == Intents.GROW_COACH_EXIT:
+        coach_state = {}
+        response = 'Хорошо, закончим на этом. Как вам сессия?'
+    elif not coach_state.get('is_active') or intent == Intents.GROW_COACH_INTRO:
+        coach_state = {'is_active': True}
         response = COACH_INTRO
-        position = None
     else:
+        # todo: maybe, ask something based on the text
         response, is_end, position = sample_next_question(QUIZ, coach_state.get('position'))
         if is_end:
-            position = None
             coach_state['is_active'] = False
-    coach_state['position'] = position
+        else:
+            coach_state['position'] = position
     return response, {"$set": {'coach_state': coach_state}}
