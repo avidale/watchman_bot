@@ -88,7 +88,7 @@ def classify_text(text, user_object=None):
 
 def reply_with_boltalka(text, user_object=None):
     r = requests.post(
-        "https://matchast-chatbot.herokuapp.com/boltalka_api",
+        "https://boltalka-as-a-service.herokuapp.com/boltalka_api",
         data=json.dumps({'utterance': text}),
         headers={'content-type': 'application/json'}
     )
