@@ -20,7 +20,7 @@ TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = 'https://the-watchman-bot.herokuapp.com/'
 
 
-MONGO_URL = 'mongodb://watchman_user1:watchman_password1@ds137441.mlab.com:37441/heroku_5c9l9qp5'
+MONGO_URL = os.environ.get('MONGODB_URI')
 mongo_client = MongoClient(MONGO_URL)
 mongo_db = mongo_client.get_default_database()
 mongo_users = mongo_db.get_collection('users')
@@ -154,8 +154,8 @@ def main_new():
         bot.polling()
     else:
         # this branch is intended to run only in the production environment (e.g. Heroku web app)
-        server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
         web_hook()
+        server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 
 if __name__ == '__main__':
