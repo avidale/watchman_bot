@@ -80,6 +80,7 @@ def wake_up():
         user_id = user.get('tg_id')
         if not user_id or not user.get('subscribed'):
             print("Do not write to user '{}'".format(user))
+            continue
         print("Writing to user '{}'".format(user_id))
         """
         for utterance in THE_QUESTIONS:
