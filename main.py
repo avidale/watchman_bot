@@ -5,11 +5,16 @@ import telebot
 import os
 import random
 import dialogue_manager
+import sentry_sdk
+
 from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 from grow import reply_with_coach
+
+if os.getenv('SENTRY_DSN', None) is not None:
+    sentry_sdk.init(os.environ['SENTRY_DSN'])
 
 ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']

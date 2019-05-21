@@ -5,3 +5,4 @@ flask-sqlalchemy
 Flask-Migrate
 pymongo==3.4.0
 pyyaml
+sentry-sdk==0.8.0
