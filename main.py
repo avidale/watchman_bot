@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import telebot
+import time
 import os
 import random
 import dialogue_manager
@@ -23,6 +24,9 @@ bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
 TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = 'https://the-watchman-bot.herokuapp.com/'
+
+# The API will not allow more than ~30 messages to different users per second
+TIMEOUT_BETWEEN_MESSAGES = 0.05
 
 
 MONGO_URL = os.environ.get('MONGODB_URI')
@@ -96,9 +100,9 @@ def wake_up():
         """
         utterance = random.choice(LONGLIST)
         bot.send_message(user_id, utterance)
-
         msg = dict(text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
         mongo_messages.insert_one(msg)
+        time.sleep(TIMEOUT_BETWEEN_MESSAGES)
     return "Маам, ну ещё пять минуточек!", 200
 
 
