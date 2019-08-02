@@ -35,6 +35,8 @@ mongo_db = mongo_client.get_default_database()
 mongo_users = mongo_db.get_collection('users')
 mongo_messages = mongo_db.get_collection('messages')
 
+PROCESSED_MESSAGES = set()
+
 
 def get_or_insert_user(tg_user=None, tg_uid=None):
     if tg_user is not None:
@@ -108,6 +110,9 @@ def wake_up():
 
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
+    if message.message_id in PROCESSED_MESSAGES:
+        return
+    PROCESSED_MESSAGES.add(message.message_id)
     user_object = get_or_insert_user(message.from_user)
     user_id = message.chat.id
     msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
