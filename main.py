@@ -26,7 +26,7 @@ TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = 'https://the-watchman-bot.herokuapp.com/'
 
 # The API will not allow more than ~30 messages to different users per second
-TIMEOUT_BETWEEN_MESSAGES = 0.05
+TIMEOUT_BETWEEN_MESSAGES = 0.5
 
 
 MONGO_URL = os.environ.get('MONGODB_URI')
@@ -101,7 +101,15 @@ def wake_up():
             db.session.add(msg)
         """
         utterance = random.choice(LONGLIST)
-        bot.send_message(user_id, utterance)
+        try:
+            bot.send_message(user_id, utterance)
+        except telebot.apihelper.ApiException as e:
+            if e.result.text and 'bot was blocked by the user' in e.result.text:
+                # unsubscribe this user
+                mongo_users.update_one({'tg_id': user_id}, {'$set': {'subscribed': False}})
+            else:
+                # don't know how to handle it
+                raise e
         msg = dict(text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
         mongo_messages.insert_one(msg)
         time.sleep(TIMEOUT_BETWEEN_MESSAGES)
