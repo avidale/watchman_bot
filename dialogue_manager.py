@@ -104,6 +104,8 @@ def classify_text(text, user_object=None):
     # fast commands
     if text == '/help':
         return Intents.HELP
+    if text == '/ask':
+        return Intents.WANT_QUESTION
     if text == '/subscribe':
         return Intents.SUBSCRIBE
     if text == '/unsubscribe':
