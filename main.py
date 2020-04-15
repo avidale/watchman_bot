@@ -97,6 +97,7 @@ def wake_up():
         print("Writing to user '{}'".format(user_id))
         req_id = str(uuid.uuid4())
         utterance = random.choice(LONGLIST)
+        intent = Intents.PUSH_QUESTION
 
         if num_unanswered >= 30:
             mongo_users.update_one(
@@ -107,6 +108,7 @@ def wake_up():
                         '\nЯ вас отписываю от вопросов. ' \
                         'Когда захотите, подпишитесь снова сами.' \
                         '\nНадеюсь, у вас всё хорошо.'
+            intent = Intents.PUSH_UNSUBSCRIBE
         if num_unanswered >= 20 and random.random() < 0.9:
             # we bother the user only with 10% probability
             continue
@@ -125,6 +127,7 @@ def wake_up():
                 'Мне кажется, нам надо прояснить отношения. Почему вы не отвечаете?!',
                 'Последние несколько дней мне кажется, что я пишу в пустоту. Что произошло?',
             ])
+            intent = Intents.PUSH_MISS_YOU
 
         try:
             bot.send_message(
@@ -143,7 +146,7 @@ def wake_up():
                 raise e
         msg = dict(
             text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
-            push=True, req_id=req_id,
+            push=True, req_id=req_id, intent=intent,
         )
         mongo_messages.insert_one(msg)
 
@@ -197,7 +200,7 @@ def process_message(message):
 
     msg = dict(
         text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
-        req_id=req_id, push=False,
+        req_id=req_id, push=False, intent=intent,
     )
     mongo_messages.insert_one(msg)
     suggests = make_suggests(text=response, intent=intent, user_object=user_object, req_id=req_id)
@@ -213,6 +216,28 @@ def callback_query(call):
     req_id, sentiment = payload.split('_', 1)
     mongo_messages.update_one({'req_id': req_id, 'from_user': False}, {'$set': {'feedback': sentiment}})
     bot.answer_callback_query(call.id, "Фидбек принят!")
+
+    user_object = get_or_insert_user(call.from_user)
+    if user_object:
+        user_id = user_object['tg_id']
+        likes_streak = user_object.get('likes_streak', 0)
+        if sentiment == 'pos':
+            likes_streak += 1
+            if likes_streak % 5 == 0 and random.random() < 0.4:
+                intent=Intents.PUSH_ASK_FEEDBACK
+                utterance = 'Я рад, что вам нравятся мои вопросы. ' \
+                            'Весьма приятно чувствовать себя нужным.' \
+                            '\nЯ буду очень благодарен, если вы про меня расскажете где-нибудь в соцсетях (:'
+                bot.send_message(user_id, utterance)
+                msg = dict(
+                    text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
+                    push=True, req_id=req_id, intent=intent,
+                )
+                mongo_messages.insert_one(msg)
+        else:
+            likes_streak = 0
+        the_update = {'$set': {'likes_streak': likes_streak}}
+        mongo_users.update_one({'tg_id': user_id}, the_update)
 
 
 @server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])

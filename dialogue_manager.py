@@ -16,6 +16,10 @@ class Intents:
     UNSUBSCRIBE = 'unsubscribe'
     WANT_QUESTION = 'want_question'
     OTHER = 'other'
+    PUSH_QUESTION = 'push_question'
+    PUSH_MISS_YOU = 'push_miss_you'
+    PUSH_UNSUBSCRIBE = 'push_unsubscribe'
+    PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
 
 
 REPLY_HELP = """
