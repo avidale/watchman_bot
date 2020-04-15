@@ -140,7 +140,7 @@ def classify_text(text, user_object=None):
         return Intents.PARABLE
     if normalized in {'помощь', 'справка', 'хелп', 'help'}:
         return Intents.HELP
-    if re.match('.*(связ|напи[сш]).*разраб', normalized):
+    if re.match('.*(свя[зж]|напи[сш]).*разраб', normalized):
         return Intents.CONTACT_DEV
 
     # fallback to boltalka
