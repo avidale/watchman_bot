@@ -190,6 +190,8 @@ def process_message(message):
         response = parables.get_random_parable()
     elif intent == Intents.CITATION:
         response = parables.get_random_citation()
+    elif intent == Intents.CONTACT_DEV:
+        response = 'Напишите моему разработчику напрямую. Это @cointegrated. Не стесняйтесь!'
     else:
         response = reply_with_boltalka(message.text, user_object)
 

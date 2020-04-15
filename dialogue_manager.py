@@ -22,6 +22,7 @@ class Intents:
     PUSH_UNSUBSCRIBE = 'push_unsubscribe'
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
     CITATION = 'citation'
+    CONTACT_DEV = 'contact_developer'
 
 
 REPLY_HELP = """
@@ -81,7 +82,9 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
     else:
         texts.append('Хочу коуч-сессию')
 
-    if intent == Intents.PARABLE and random.random() < 0.5:
+    if intent in {Intents.HELP, Intents.INTRO}:
+        texts.extend(['Дай случайную цитату', 'Расскажи притчу', 'Связь с разработчиком'])
+    elif intent == Intents.PARABLE and random.random() < 0.5:
         texts.insert(0, 'Ещё притчу!')
     elif intent == Intents.CITATION and random.random() < 0.5:
         texts.insert(0, 'Ещё цитату!')
@@ -135,6 +138,10 @@ def classify_text(text, user_object=None):
         return Intents.CITATION
     if 'притч' in normalized or 'историю' in normalized or 'сказк' in normalized:
         return Intents.PARABLE
+    if normalized in {'помощь', 'справка', 'хелп', 'help'}:
+        return Intents.HELP
+    if re.match('.*(связ|напи[сш]).*разраб', normalized):
+        return Intents.CONTACT_DEV
 
     # fallback to boltalka
     return Intents.OTHER
