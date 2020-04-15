@@ -14,6 +14,7 @@ from flask import Flask, request
 from pymongo import MongoClient
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 from grow import reply_with_coach
+import parables
 
 if os.getenv('SENTRY_DSN', None) is not None:
     sentry_sdk.init(os.environ['SENTRY_DSN'])
@@ -170,7 +171,7 @@ def process_message(message):
     )
     mongo_messages.insert_one(msg)
     intent = classify_text(message.text, user_object=user_object)
-    the_update = None
+    the_update = {}
     if intent == Intents.HELP:
         response = dialogue_manager.REPLY_HELP
     elif intent == Intents.INTRO:
@@ -185,12 +186,13 @@ def process_message(message):
         the_update = {"$set": {'subscribed': False}}
     elif intent == Intents.GROW_COACH_INTRO or intent == Intents.GROW_COACH or intent == Intents.GROW_COACH_EXIT:
         response, the_update = reply_with_coach(message.text, user_object=user_object, intent=intent)
+    elif intent == Intents.PARABLE:
+        response = parables.get_random_parable()
+    elif intent == Intents.CITATION:
+        response = parables.get_random_citation()
     else:
         response = reply_with_boltalka(message.text, user_object)
 
-    # todo: unconditionally, update the prev_intent - needed for classification
-    if the_update is None:
-        the_update = {}
     if '$set' not in the_update:
         the_update['$set'] = {}
     the_update['$set']['last_intent'] = intent
@@ -204,7 +206,7 @@ def process_message(message):
     )
     mongo_messages.insert_one(msg)
     suggests = make_suggests(text=response, intent=intent, user_object=user_object, req_id=req_id)
-    bot.reply_to(message, response, reply_markup=suggests)
+    bot.reply_to(message, response, reply_markup=suggests, parse_mode='html', disable_web_page_preview=True)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -228,7 +230,7 @@ def callback_query(call):
                 utterance = 'Я рад, что вам нравятся мои вопросы. ' \
                             'Весьма приятно чувствовать себя нужным.' \
                             '\nЯ буду очень благодарен, если вы про меня расскажете где-нибудь в соцсетях (:'
-                bot.send_message(user_id, utterance)
+                bot.send_message(user_id, utterance, parse_mode='html')
                 msg = dict(
                     text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
                     push=True, req_id=req_id, intent=intent,

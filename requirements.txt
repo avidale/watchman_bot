@@ -3,3 +3,5 @@ flask
 pymongo
 pyyaml
 sentry-sdk
+requests
+bs4

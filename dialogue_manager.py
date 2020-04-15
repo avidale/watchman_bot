@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import requests
 
@@ -20,6 +21,7 @@ class Intents:
     PUSH_MISS_YOU = 'push_miss_you'
     PUSH_UNSUBSCRIBE = 'push_unsubscribe'
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
+    CITATION = 'citation'
 
 
 REPLY_HELP = """
@@ -61,7 +63,7 @@ def make_like_dislike_buttons(req_id=0, wtf=False):
 def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
     if intent == Intents.WANT_QUESTION:
         return make_like_dislike_buttons(req_id=req_id)
-    if intent == Intents.OTHER:
+    if intent == Intents.OTHER and random.random() < 0.9:
         return make_like_dislike_buttons(req_id=req_id, wtf=True)
 
     suggests_markup = types.ReplyKeyboardMarkup()
@@ -78,6 +80,15 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
         texts.append('Завершить сессию')
     else:
         texts.append('Хочу коуч-сессию')
+
+    if intent == Intents.PARABLE and random.random() < 0.5:
+        texts.insert(0, 'Ещё притчу!')
+    elif intent == Intents.CITATION and random.random() < 0.5:
+        texts.insert(0, 'Ещё цитату!')
+    elif 'coach' not in intent:
+        texts.append(random.choice([
+            'Цитата', 'Притча', 'Случайная цитата', 'Случайная притча', 'Расскажи притчу', 'Хочу цитату'
+        ]))
     suggests_markup.add(*[types.KeyboardButton(s) for s in texts])
 
     return suggests_markup
@@ -98,6 +109,10 @@ def classify_text(text, user_object=None):
         return Intents.INTRO
     if text == '/coach':
         return Intents.GROW_COACH_INTRO
+    if text == '/citation':
+        return Intents.CITATION
+    if text == '/parable':
+        return Intents.PARABLE
 
     # continue scenarios
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
@@ -116,6 +131,10 @@ def classify_text(text, user_object=None):
         return Intents.GROW_COACH_INTRO
     if 'вопрос' in normalized:
         return Intents.WANT_QUESTION
+    if 'цитат' in normalized or 'высказывани' in normalized:
+        return Intents.CITATION
+    if 'притч' in normalized or 'историю' in normalized or 'сказк' in normalized:
+        return Intents.PARABLE
 
     # fallback to boltalka
     return Intents.OTHER
