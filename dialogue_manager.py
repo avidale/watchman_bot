@@ -85,7 +85,7 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
         texts.insert(0, 'Ещё притчу!')
     elif intent == Intents.CITATION and random.random() < 0.5:
         texts.insert(0, 'Ещё цитату!')
-    elif 'coach' not in intent:
+    elif 'coach' not in intent and random.random() < 0.4:
         texts.append(random.choice([
             'Цитата', 'Притча', 'Случайная цитата', 'Случайная притча', 'Расскажи притчу', 'Хочу цитату'
         ]))
