@@ -68,7 +68,7 @@ def sample_next_question(quiz, position=None):
 
 
 with open('data/grow.yaml', 'r', encoding='utf-8') as f:
-    QUIZ = preprocess_quiz(yaml.load(f))
+    QUIZ = preprocess_quiz(yaml.safe_load(f))
 
 
 def reply_with_coach(text, user_object=None, intent=None):

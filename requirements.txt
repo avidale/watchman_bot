@@ -1,8 +1,5 @@
 pytelegrambotapi
-psycopg2
 flask
-flask-sqlalchemy
-Flask-Migrate
-pymongo==3.4.0
+pymongo
 pyyaml
-sentry-sdk==0.8.0
+sentry-sdk

@@ -7,6 +7,7 @@ import os
 import random
 import dialogue_manager
 import sentry_sdk
+import uuid
 
 from datetime import datetime
 from flask import Flask, request
@@ -89,29 +90,65 @@ def wake_up():
     # todo: decide what to do if the update interferes with the current dialogue
     for user in mongo_users.find():
         user_id = user.get('tg_id')
+        num_unanswered = user.get('num_unanswered', 0)
         if not user_id or not user.get('subscribed'):
             print("Do not write to user '{}'".format(user))
             continue
         print("Writing to user '{}'".format(user_id))
-        """
-        for utterance in THE_QUESTIONS:
-            bot.send_message(user.user_id, utterance)
-            time.sleep(0.01)
-            msg = StoredMessage(text=utterance, user_id=user.user_id, from_user=False)
-            db.session.add(msg)
-        """
+        req_id = str(uuid.uuid4())
         utterance = random.choice(LONGLIST)
+
+        if num_unanswered >= 30:
+            mongo_users.update_one(
+                {'tg_id': user_id},
+                {'$set': {'subscribed': False}}
+            )
+            utterance = 'Я устал от этого монолога. ' \
+                        '\nЯ вас отписываю от вопросов. ' \
+                        'Когда захотите, подпишитесь снова сами.' \
+                        '\nНадеюсь, у вас всё хорошо.'
+        if num_unanswered >= 20 and random.random() < 0.9:
+            # we bother the user only with 10% probability
+            continue
+        elif num_unanswered >= 10 and random.random() < 0.5:
+            # send message to user every other day
+            continue
+        elif num_unanswered >= 3 and random.random() < 0.2:
+            # 20 % of messages ask what happens with the user
+            utterance = random.choice([
+                'Хм, я уже несколько дней не получаю ответа. С вами всё в порядке?',
+                'Что-то вы давно мне не отвечаете. Как у вас дела?',
+                'Привет! Я давно уже не получаю от вас писем. Вы куда-то уехали?',
+                'Здравствуйте! Как давно я не получал от вас писем. Где вы?',
+                'Эх, как я соскучился по вашим интересным ответам...',
+                'Мне так нравилось читать ваши ответы... Может, напишете мне снова?',
+                'Мне кажется, нам надо прояснить отношения. Почему вы не отвечаете?!',
+                'Последние несколько дней мне кажется, что я пишу в пустоту. Что произошло?',
+            ])
+
         try:
-            bot.send_message(user_id, utterance)
+            bot.send_message(
+                user_id, utterance,
+                reply_markup=dialogue_manager.make_like_dislike_buttons(req_id=req_id),
+            )
         except telebot.apihelper.ApiException as e:
             if e.result.text and 'bot was blocked by the user' in e.result.text:
                 # unsubscribe this user
-                mongo_users.update_one({'tg_id': user_id}, {'$set': {'subscribed': False}})
+                mongo_users.update_one(
+                    {'tg_id': user_id},
+                    {'$set': {'subscribed': False, 'blocked': True}}
+                )
             else:
                 # don't know how to handle it
                 raise e
-        msg = dict(text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
+        msg = dict(
+            text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
+            push=True, req_id=req_id,
+        )
         mongo_messages.insert_one(msg)
+
+        the_update = {'$set': {'num_unanswered': num_unanswered + 1}}
+        mongo_users.update_one({'tg_id': user_id}, the_update)
         time.sleep(TIMEOUT_BETWEEN_MESSAGES)
     return "Маам, ну ещё пять минуточек!", 200
 
@@ -123,7 +160,11 @@ def process_message(message):
     PROCESSED_MESSAGES.add(message.message_id)
     user_object = get_or_insert_user(message.from_user)
     user_id = message.chat.id
-    msg = dict(text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()))
+    req_id = str(uuid.uuid4())
+    msg = dict(
+        text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()),
+        req_id=req_id,
+    )
     mongo_messages.insert_one(msg)
     intent = classify_text(message.text, user_object=user_object)
     the_update = None
@@ -150,14 +191,28 @@ def process_message(message):
     if '$set' not in the_update:
         the_update['$set'] = {}
     the_update['$set']['last_intent'] = intent
+    the_update['$set']['num_unanswered'] = 0
     mongo_users.update_one({'tg_id': message.from_user.id}, the_update)
     user_object = get_or_insert_user(tg_uid=message.from_user.id)
 
-    msg = dict(text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()))
-    # todo: log the previous message id
+    msg = dict(
+        text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
+        req_id=req_id, push=False,
+    )
     mongo_messages.insert_one(msg)
-    suggests = make_suggests(text=response, intent=intent, user_object=user_object)
+    suggests = make_suggests(text=response, intent=intent, user_object=user_object, req_id=req_id)
     bot.reply_to(message, response, reply_markup=suggests)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    payload = call.data
+    if '_' not in payload:
+        bot.answer_callback_query(call.id, 'Странно')
+        return
+    req_id, sentiment = payload.split('_', 1)
+    mongo_messages.update_one({'req_id': req_id, 'from_user': False}, {'$set': {'feedback': sentiment}})
+    bot.answer_callback_query(call.id, "Фидбек принят!")
 
 
 @server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])

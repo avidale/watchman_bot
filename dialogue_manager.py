@@ -43,7 +43,24 @@ REPLY_INTRO = """
 """
 
 
-def make_suggests(text='', intent=Intents.OTHER, user_object=None):
+def make_like_dislike_buttons(req_id=0, wtf=False):
+    buttons = list()
+    buttons.append(types.InlineKeyboardButton("\U0001F44D", callback_data="{}_pos".format(req_id)))
+    if wtf:
+        buttons.append(types.InlineKeyboardButton("\U0001F914", callback_data="{}_wtf".format(req_id)))
+    buttons.append(types.InlineKeyboardButton("\U0001F44E", callback_data="{}_neg".format(req_id)))
+    inline_markup = types.InlineKeyboardMarkup()
+    inline_markup.add(*buttons)
+    return inline_markup
+
+
+def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
+    if intent == Intents.WANT_QUESTION:
+        return make_like_dislike_buttons(req_id=req_id)
+    if intent == Intents.OTHER:
+        return make_like_dislike_buttons(req_id=req_id, wtf=True)
+
+    suggests_markup = types.ReplyKeyboardMarkup()
     if user_object is None:
         user_object = {}
     texts = [
@@ -57,9 +74,9 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None):
         texts.append('Завершить сессию')
     else:
         texts.append('Хочу коуч-сессию')
-    markup = types.ReplyKeyboardMarkup()
-    markup.add(*[types.KeyboardButton(s) for s in texts])
-    return markup
+    suggests_markup.add(*[types.KeyboardButton(s) for s in texts])
+
+    return suggests_markup
 
 
 def classify_text(text, user_object=None):
