@@ -22,6 +22,7 @@ class Intents:
     PUSH_UNSUBSCRIBE = 'push_unsubscribe'
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
     CITATION = 'citation'
+    NEWS = 'news'
     CONTACT_DEV = 'contact_developer'
 
 
@@ -144,6 +145,8 @@ def classify_text(text, user_object=None):
         return Intents.HELP
     if re.match('.*(свя[зж]|напи[сш]).*разраб', normalized):
         return Intents.CONTACT_DEV
+    if re.match('расск.*новост', normalized):
+        return Intents.NEWS
 
     # fallback to boltalka
     return Intents.OTHER

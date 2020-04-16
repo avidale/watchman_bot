@@ -3,6 +3,7 @@
 import argparse
 import telebot
 import time
+import mongomock
 import os
 import random
 import dialogue_manager
@@ -32,8 +33,12 @@ TIMEOUT_BETWEEN_MESSAGES = 0.5
 
 
 MONGO_URL = os.environ.get('MONGODB_URI')
-mongo_client = MongoClient(MONGO_URL)
-mongo_db = mongo_client.get_default_database()
+if MONGO_URL:
+    mongo_client = MongoClient(MONGO_URL)
+    mongo_db = mongo_client.get_default_database()
+else:
+    mongo_client = mongomock.MongoClient()
+    mongo_db = mongo_client.db
 mongo_users = mongo_db.get_collection('users')
 mongo_messages = mongo_db.get_collection('messages')
 
@@ -85,6 +90,16 @@ def web_hook():
     return "!", 200
 
 
+def generate_question():
+    rnd = random.random()
+    if rnd < 0.8:
+        return random.choice(LONGLIST)
+    elif rnd < 0.9:
+        return parables.get_random_news(ask_opinion=True)
+    else:
+        return parables.get_random_citation(ask_opinion=True)
+
+
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
@@ -97,7 +112,7 @@ def wake_up():
             continue
         print("Writing to user '{}'".format(user_id))
         req_id = str(uuid.uuid4())
-        utterance = random.choice(LONGLIST)
+        utterance = generate_question()
         intent = Intents.PUSH_QUESTION
 
         if num_unanswered >= 30:
@@ -177,7 +192,7 @@ def process_message(message):
     elif intent == Intents.INTRO:
         response = dialogue_manager.REPLY_HELP + '\n' + dialogue_manager.REPLY_INTRO
     elif intent == Intents.WANT_QUESTION:
-        response = random.choice(LONGLIST)
+        response = generate_question()
     elif intent == Intents.SUBSCRIBE:
         response = "Теперь вы подписаны на ежедневные вопросы!"
         the_update = {"$set": {'subscribed': True}}
@@ -192,6 +207,8 @@ def process_message(message):
         response = parables.get_random_citation()
     elif intent == Intents.CONTACT_DEV:
         response = 'Напишите моему разработчику напрямую. Это @cointegrated. Не стесняйтесь!'
+    elif intent == Intents.NEWS:
+        response = parables.get_random_news(ask_opinion=(random.random() < 0.2))
     else:
         response = reply_with_boltalka(message.text, user_object)
 

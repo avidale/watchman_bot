@@ -5,3 +5,5 @@ pyyaml
 sentry-sdk
 requests
 bs4
+xmltodict
+mongomock
