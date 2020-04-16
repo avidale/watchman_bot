@@ -63,7 +63,7 @@ def make_like_dislike_buttons(req_id=0, wtf=False):
 
 
 def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
-    if intent == Intents.WANT_QUESTION:
+    if intent == Intents.WANT_QUESTION or intent == Intents.NEWS:
         return make_like_dislike_buttons(req_id=req_id)
     if intent == Intents.OTHER and random.random() < 0.9:
         return make_like_dislike_buttons(req_id=req_id, wtf=True)
@@ -119,6 +119,8 @@ def classify_text(text, user_object=None):
         return Intents.CITATION
     if text == '/parable':
         return Intents.PARABLE
+    if text == '/news':
+        return Intents.NEWS
 
     # continue scenarios
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:

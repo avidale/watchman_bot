@@ -79,7 +79,7 @@ def get_random_parable():
 
 
 @opinions
-def get_random_news(topic='science', ask_opinion=False):
+def get_random_news(topic='science'):
     r = requests.get('https://news.yandex.ru/{}.rss'.format(topic))
     if not r.ok:
         return 'Не получилось найти новость. Но я могу вам рассказать притчу или цитату.'
