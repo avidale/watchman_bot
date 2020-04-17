@@ -144,6 +144,7 @@ def wake_up():
             bot.send_message(
                 user_id, utterance,
                 reply_markup=dialogue_manager.make_like_dislike_buttons(req_id=req_id),
+                parse_mode='html', disable_web_page_preview=True,
             )
         except telebot.apihelper.ApiException as e:
             if e.result.text and 'bot was blocked by the user' in e.result.text:
