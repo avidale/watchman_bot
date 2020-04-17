@@ -9,13 +9,14 @@ import random
 import dialogue_manager
 import sentry_sdk
 import uuid
+import parables
 
 from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 from grow import reply_with_coach
-import parables
+
 
 if os.getenv('SENTRY_DSN', None) is not None:
     sentry_sdk.init(os.environ['SENTRY_DSN'])
@@ -62,18 +63,12 @@ def get_or_insert_user(tg_user=None, tg_uid=None):
         first_name=tg_user.first_name,
         last_name=tg_user.last_name,
         username=tg_user.username,
-        subscribed=True  # todo: ask for subscription
+        subscribed=True,  # todo: ask for subscription
     )
     mongo_users.insert_one(new_user)
     return new_user
 
 
-THE_QUESTIONS = [
-    "Остановись!",
-    "Кто ты?",
-    "Откуда ты?",
-    "Куда ты идёшь?"
-]
 with open('many_questions.txt', 'r', encoding='utf-8') as f:
     LONGLIST = [
         q for q in f.readlines()
