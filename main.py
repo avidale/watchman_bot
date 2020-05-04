@@ -139,23 +139,29 @@ def wake_up():
                 'Последние несколько дней мне кажется, что я пишу в пустоту. Что произошло?',
             ])
             intent = Intents.PUSH_MISS_YOU
-
-        try:
-            bot.send_message(
-                user_id, utterance,
-                reply_markup=dialogue_manager.make_like_dislike_buttons(req_id=req_id),
-                parse_mode='html', disable_web_page_preview=True,
-            )
-        except telebot.apihelper.ApiException as e:
-            if e.result.text and 'bot was blocked by the user' in e.result.text:
-                # unsubscribe this user
-                mongo_users.update_one(
-                    {'tg_id': user_id},
-                    {'$set': {'subscribed': False, 'blocked': True}}
+        for attempt in range(3):
+            try:
+                bot.send_message(
+                    user_id, utterance,
+                    reply_markup=dialogue_manager.make_like_dislike_buttons(req_id=req_id),
+                    parse_mode='html', disable_web_page_preview=True,
                 )
-            else:
-                # don't know how to handle it
-                raise e
+                break
+            except telebot.apihelper.ApiException as e:
+                if e.result.text and 'bot was blocked by the user' in e.result.text:
+                    # unsubscribe this user
+                    mongo_users.update_one(
+                        {'tg_id': user_id},
+                        {'$set': {'subscribed': False, 'blocked': True}}
+                    )
+                    break
+                elif e.result.status_code == 429:
+                    # too many requests - just waiting
+                    time.sleep(3)
+                    continue
+                else:
+                    # don't know how to handle it
+                    raise e
         msg = dict(
             text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
             push=True, req_id=req_id, intent=intent,
