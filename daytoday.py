@@ -77,7 +77,7 @@ def get_today_events(url=SITE_ROOT):
 
 def is_like_religion(text):
     text = text.lower()
-    if re.match('.*(свят|бог|апостол|господ)', text):
+    if re.match('.*(свят|бог|апостол|господ|икон|бож|именин)', text):
         return True
     return False
 

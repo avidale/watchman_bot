@@ -23,7 +23,7 @@ class Intents:
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
     CITATION = 'citation'
     NEWS = 'news'
-    TODAY_EVENTS = 'today_events'
+    DAY_TODAY = 'today_events'
     CONTACT_DEV = 'contact_developer'
 
 
@@ -123,7 +123,7 @@ def classify_text(text, user_object=None):
     if text == '/news':
         return Intents.NEWS
     if text == '/today':
-        return Intents.TODAY_EVENTS
+        return Intents.DAY_TODAY
 
     # continue scenarios
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
@@ -152,6 +152,8 @@ def classify_text(text, user_object=None):
         return Intents.CONTACT_DEV
     if re.match('расск.*новост', normalized):
         return Intents.NEWS
+    if re.match('.*(день сегодня|сегодня день)', normalized):
+        return Intents.DAY_TODAY
 
     # fallback to boltalka
     return Intents.OTHER
