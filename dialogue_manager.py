@@ -152,7 +152,7 @@ def classify_text(text, user_object=None):
         return Intents.CONTACT_DEV
     if re.match('расск.*новост', normalized):
         return Intents.NEWS
-    if re.match('.*(день сегодня|сегодня день)', normalized):
+    if 'сегодня' in normalized and re.match('.*(день|праздник|дата|событие|отмечают|празднуют)', normalized):
         return Intents.DAY_TODAY
 
     # fallback to boltalka
