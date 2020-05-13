@@ -2,6 +2,8 @@ import requests
 import random
 import re
 
+from morphology import gent
+
 from bs4 import BeautifulSoup
 
 from parables import opinions
@@ -91,11 +93,12 @@ def get_random_event(url=SITE_ROOT):
     ]
     event = random.choices(events, weights=w)[0]
     if event['country']:
+        country = gent(event['country'])
         result = random.choice([
-            f'Сегодня в {event["country"]} отмечают {event["event"]}.',
-            f'Сегодня празднуют {event["event"]} в {event["country"]}.',
-            f'Мне тут рассказали, что сегодня {event["event"]} в {event["country"]}.',
-            f'Сегодня особенный день: в {event["country"]} отмечают {event["event"]}.',
+            f'Сегодня в {country} отмечают {event["event"]}.',
+            f'Сегодня празднуют {event["event"]} в {country}.',
+            f'Мне тут рассказали, что сегодня {event["event"]} в {country}.',
+            f'Сегодня особенный день: в {country} отмечают {event["event"]}.',
         ])
     else:
         result = random.choice([
