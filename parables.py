@@ -80,6 +80,9 @@ def get_random_parable():
 
 @opinions
 def get_random_news(topic='science'):
+    """ The topics are chosen from https://yandex.ru/news/export """
+    if topic == 'random':
+        topic = random.choice(['index', 'science', 'world'])
     r = requests.get('https://news.yandex.ru/{}.rss'.format(topic))
     if not r.ok:
         return 'Не получилось найти новость. Но я могу вам рассказать притчу или цитату.'

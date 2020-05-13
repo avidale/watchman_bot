@@ -6,10 +6,12 @@ import time
 import mongomock
 import os
 import random
-import dialogue_manager
 import sentry_sdk
 import uuid
+
+import dialogue_manager
 import parables
+import daytoday
 
 from datetime import datetime
 from flask import Flask, request
@@ -87,12 +89,14 @@ def web_hook():
 
 def generate_question():
     rnd = random.random()
-    if rnd < 0.8:
-        return random.choice(LONGLIST)
-    elif rnd < 0.9:
+    if rnd > 0.9:
         return parables.get_random_news(ask_opinion=True)
-    else:
+    elif rnd > 0.8:
         return parables.get_random_citation(ask_opinion=True)
+    elif rnd > 0.7:
+        return daytoday.get_random_event(ask_opinion=True)
+    else:
+        return random.choice(LONGLIST)
 
 
 @server.route("/wakeup/")
@@ -211,6 +215,8 @@ def process_message(message):
         response = 'Напишите моему разработчику напрямую. Это @cointegrated. Не стесняйтесь!'
     elif intent == Intents.NEWS:
         response = parables.get_random_news(ask_opinion=(random.random() < 0.2))
+    elif intent == Intents.TODAY_EVENTS:
+        response = daytoday.get_random_event(ask_opinion=(random.random() < 0.4))
     else:
         response = reply_with_boltalka(message.text, user_object)
 

@@ -23,6 +23,7 @@ class Intents:
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
     CITATION = 'citation'
     NEWS = 'news'
+    TODAY_EVENTS = 'today_events'
     CONTACT_DEV = 'contact_developer'
 
 
@@ -121,6 +122,8 @@ def classify_text(text, user_object=None):
         return Intents.PARABLE
     if text == '/news':
         return Intents.NEWS
+    if text == '/today':
+        return Intents.TODAY_EVENTS
 
     # continue scenarios
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
