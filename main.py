@@ -214,7 +214,7 @@ def process_message(message):
     elif intent == Intents.CONTACT_DEV:
         response = 'Напишите моему разработчику напрямую. Это @cointegrated. Не стесняйтесь!'
     elif intent == Intents.NEWS:
-        response = parables.get_random_news(ask_opinion=(random.random() < 0.2))
+        response = parables.get_random_news(ask_opinion=(random.random() < 0.2), topic='random')
     elif intent == Intents.DAY_TODAY:
         response = daytoday.get_random_event(ask_opinion=(random.random() < 0.4))
     else:

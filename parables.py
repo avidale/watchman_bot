@@ -95,7 +95,7 @@ def get_random_news(topic='science'):
         f'Тут люди в городе <a href="{url}">поговаривают</a>, что {first_lower(title)}.\n{text}',
         f'Я <a href="{url}">где-то услышал</a>, новость, что {first_lower(title)}.',
         f'А вы уже слышали <a href="{url}">новость</a>, что {first_lower(title)}?\n{text}',
-        f'Ходят <a href="{url}">слухи</a>, что {first_lower(title)}? Вроде бы {first_lower(text)}',
+        f'Ходят <a href="{url}">слухи</a>, что {first_lower(title)}. Вроде бы {first_lower(text)}',
         f'Вот какую <a href="{url}">новость</a> я недавно слышал. {title}.',
         f'Простите, что я <a href="{url}">сплетничаю</a>, но уж больно любопытно. {title}.',
     ])
