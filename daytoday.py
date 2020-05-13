@@ -89,7 +89,7 @@ def get_random_event(url=SITE_ROOT):
         e['upvotes'] ** 0.5 * (0.1 if is_like_religion(e['event']) else 1)
         for e in events
     ]
-    event = random.choices(events, weights=w)[0]['text']
+    event = random.choices(events, weights=w)[0]
     if event['country']:
         result = random.choice([
             f'Сегодня в {event["country"]} отмечают {event["event"]}.',
