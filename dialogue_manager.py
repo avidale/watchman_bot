@@ -6,6 +6,11 @@ import requests
 from telebot import types
 
 
+EMPTY_STATE = {
+    'coach_state': None,
+}
+
+
 class Intents:
     GROW_COACH = 'grow_coach'
     GROW_COACH_INTRO = 'grow_coach_intro'

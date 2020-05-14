@@ -83,6 +83,7 @@ with open('many_questions.txt', 'r', encoding='utf-8') as f:
 @server.route("/" + TELEBOT_URL)
 def web_hook():
     bot.remove_webhook()
+    time.sleep(TIMEOUT_BETWEEN_MESSAGES)
     bot.set_webhook(url=BASE_URL + TELEBOT_URL + TOKEN)
     return "!", 200
 
@@ -102,13 +103,18 @@ def generate_question():
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
-    # todo: decide what to do if the update interferes with the current dialogue
     for user in mongo_users.find():
         user_id = user.get('tg_id')
         num_unanswered = user.get('num_unanswered', 0)
         if not user_id or not user.get('subscribed'):
-            print("Do not write to user '{}'".format(user))
+            print("Do not write to the unsubscribed user '{}'".format(user))
             continue
+        if 'last_message_time' in user:
+            # don't send the update if the last user message is very recent
+            delta = datetime.utcnow() - datetime.fromisoformat(user['last_message_time'])
+            if delta.total_seconds() < 60 * 10:  # after 10 minutes of inactivity a gentle push seems OK
+                print("Do not write to the user '{}' in the middle of conversation".format(user))
+                continue
         print("Writing to user '{}'".format(user_id))
         req_id = str(uuid.uuid4())
         utterance = generate_question()
@@ -173,6 +179,7 @@ def wake_up():
         mongo_messages.insert_one(msg)
 
         the_update = {'$set': {'num_unanswered': num_unanswered + 1}}
+        the_update['$set'].update(dialogue_manager.EMPTY_STATE)
         mongo_users.update_one({'tg_id': user_id}, the_update)
         time.sleep(TIMEOUT_BETWEEN_MESSAGES)
     return "Маам, ну ещё пять минуточек!", 200
@@ -186,8 +193,9 @@ def process_message(message):
     user_object = get_or_insert_user(message.from_user)
     user_id = message.chat.id
     req_id = str(uuid.uuid4())
+    now = str(datetime.utcnow())
     msg = dict(
-        text=message.text, user_id=user_id, from_user=True, timestamp=str(datetime.utcnow()),
+        text=message.text, user_id=user_id, from_user=True, timestamp=now,
         req_id=req_id,
     )
     mongo_messages.insert_one(msg)
@@ -224,6 +232,7 @@ def process_message(message):
         the_update['$set'] = {}
     the_update['$set']['last_intent'] = intent
     the_update['$set']['num_unanswered'] = 0
+    the_update['$set']['last_message_time'] = now
     mongo_users.update_one({'tg_id': message.from_user.id}, the_update)
     user_object = get_or_insert_user(tg_uid=message.from_user.id)
 
