@@ -105,7 +105,7 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
 
 
 def classify_text(text, user_object=None):
-    normalized = text.lower().strip()
+    normalized = re.sub('[^a-zа-яё0-9]+', ' ', text.lower()).strip()
     if user_object is None:
         user_object = {}
     # fast commands
