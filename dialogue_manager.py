@@ -130,6 +130,12 @@ def classify_text(text, user_object=None):
     if text == '/today':
         return Intents.DAY_TODAY
 
+    # interrupt scenarios
+    if normalized == 'хочу вопрос':
+        return Intents.WANT_QUESTION
+    if normalized == 'отписаться':
+        return Intents.UNSUBSCRIBE
+
     # continue scenarios
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
         if user_object.get('coach_state').get('is_active'):
