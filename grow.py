@@ -74,7 +74,7 @@ with open('data/grow.yaml', 'r', encoding='utf-8') as f:
 def reply_with_coach(text, user_object=None, intent=None):
     if user_object is None:
         user_object = {}
-    coach_state = user_object.get('coach_state', {})
+    coach_state = user_object.get('coach_state', {}) or {}
     if intent == Intents.GROW_COACH_EXIT:
         coach_state = {}
         response = 'Хорошо, закончим на этом. Как вам сессия?'

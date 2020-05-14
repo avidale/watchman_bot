@@ -204,7 +204,7 @@ def process_message(message):
 
     if user_object.get('coach_state') and 'grow_coach' not in intent:
         # interrupt the coach scenario if we are out of it
-        the_update = {"$set": {'coach_state': None}}
+        the_update = {"$set": {'coach_state': {}}}
 
     if intent == Intents.HELP:
         response = dialogue_manager.REPLY_HELP

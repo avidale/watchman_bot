@@ -7,7 +7,7 @@ from telebot import types
 
 
 EMPTY_STATE = {
-    'coach_state': None,
+    'coach_state': {},
 }
 
 
