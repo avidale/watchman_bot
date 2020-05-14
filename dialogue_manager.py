@@ -84,7 +84,7 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
         texts.append('Отписаться'),
     else:
         texts.append('Подписаться')
-    if user_object.get('coach_state', {}).get('is_active'):
+    if (user_object.get('coach_state', {}) or {}).get('is_active'):
         texts.append('Завершить сессию')
     else:
         texts.append('Хочу коуч-сессию')
