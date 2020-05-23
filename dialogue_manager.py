@@ -69,9 +69,11 @@ def make_like_dislike_buttons(req_id=0, wtf=False):
 
 
 def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
-    if intent == Intents.WANT_QUESTION or intent == Intents.NEWS:
+    # for 30% of questions, we generate like-dislike buttons
+    if (intent == Intents.WANT_QUESTION or intent == Intents.NEWS) and random.random() < 0.7:
         return make_like_dislike_buttons(req_id=req_id)
-    if intent == Intents.OTHER and random.random() < 0.9:
+    # for 30% of conversational messages, we generate like-dislike buttons with the third option
+    if intent == Intents.OTHER and random.random() < 0.7:
         return make_like_dislike_buttons(req_id=req_id, wtf=True)
 
     suggests_markup = types.ReplyKeyboardMarkup()
