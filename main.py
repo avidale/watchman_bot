@@ -165,6 +165,12 @@ def wake_up():
                         {'$set': {'subscribed': False, 'blocked': True}}
                     )
                     break
+                elif e.result.text and 'user is deactivated' in e.result.text:
+                    mongo_users.update_one(
+                        {'tg_id': user_id},
+                        {'$set': {'subscribed': False, 'deactivated': True}}
+                    )
+                    break
                 elif e.result.status_code == 429:
                     # too many requests - just waiting
                     time.sleep(3)
