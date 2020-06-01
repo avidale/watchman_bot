@@ -224,7 +224,7 @@ def process_message(message):
     elif intent == Intents.UNSUBSCRIBE:
         response = "Теперь вы отписаны от ежедневных вопросов!"
         the_update = {"$set": {'subscribed': False}}
-    elif intent == Intents.GROW_COACH_INTRO or intent == Intents.GROW_COACH or intent == Intents.GROW_COACH_EXIT:
+    elif intent in {Intents.GROW_COACH_INTRO, Intents.GROW_COACH, Intents.GROW_COACH_EXIT, Intents.GROW_COACH_FEEDBACK}:
         response, the_update = reply_with_coach(message.text, user_object=user_object, intent=intent)
     elif intent == Intents.PARABLE:
         response = parables.get_random_parable()

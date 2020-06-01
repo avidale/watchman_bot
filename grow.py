@@ -3,7 +3,7 @@ import random
 
 from dialogue_manager import Intents
 
-COACH_INTRO = """Окей! Сейчас я задам 7-10 вопросов, которые помогут вам достичь цели."""
+COACH_INTRO = """Окей! Сейчас я задам около 10-15 вопросов, которые помогут вам достичь цели."""
 
 
 def preprocess_quiz(quiz):
@@ -75,17 +75,27 @@ def reply_with_coach(text, user_object=None, intent=None):
     if user_object is None:
         user_object = {}
     coach_state = user_object.get('coach_state', {}) or {}
+    coach_state['intro'] = False
     if intent == Intents.GROW_COACH_EXIT:
+        coach_state['ask_feedback'] = True
+        response = 'Хорошо, закончим на этом. Как вам эта сессия?'
+    elif intent == Intents.GROW_COACH_FEEDBACK:
         coach_state = {}
-        response = 'Хорошо, закончим на этом. Как вам сессия?'
+        response = 'Спасибо за обратную связь! \U0001F60A' \
+                   '\nМне будет приятно, если вы подробнее опишете: ' \
+                   'что понравилось, что не понравилось, как можно улучшить этот сценарий.'
     elif not coach_state.get('is_active') or intent == Intents.GROW_COACH_INTRO:
-        coach_state = {'is_active': True}
+        coach_state = {'is_active': True, 'intro': True, 'question_count': 0}
         response = COACH_INTRO
     else:
+        qc = coach_state.get('question_count') or 0
+        qc += 1
         # todo: maybe, ask something based on the text
         response, is_end, position = sample_next_question(QUIZ, coach_state.get('position'))
         if is_end:
-            coach_state['is_active'] = False
+            coach_state['ask_feedback'] = True
         else:
+            response = '{}. {}'.format(qc, response)
             coach_state['position'] = position
+        coach_state['question_count'] = qc
     return response, {"$set": {'coach_state': coach_state}}

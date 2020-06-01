@@ -15,6 +15,7 @@ class Intents:
     GROW_COACH = 'grow_coach'
     GROW_COACH_INTRO = 'grow_coach_intro'
     GROW_COACH_EXIT = 'grow_coach_exit'
+    GROW_COACH_FEEDBACK = 'grow_coach_feedback'
     HELP = 'help'
     INTRO = 'intro'
     PARABLE = 'parable'
@@ -79,16 +80,23 @@ def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
     suggests_markup = types.ReplyKeyboardMarkup()
     if user_object is None:
         user_object = {}
-    texts = [
-        'Хочу вопрос!'
-    ]
-    if user_object.get('subscribed'):
-        texts.append('Отписаться'),
+    texts = []
+    coach_state = user_object.get('coach_state', {}) or {}
+    if coach_state.get('is_active'):
+        if coach_state.get('intro'):
+            texts.append(random.choice(['Окей', 'Поехали!', 'Хорошо', 'Понятно']))
+        if coach_state.get('ask_feedback'):
+            texts.append(random.choice(['Круто!', 'Отлично', 'Очень понравилась', 'Офигенно']))
+            texts.append(random.choice(['Нормально', 'Сойдёт', 'Неплохо']))
+            texts.append(random.choice(['Так себе', 'Не понравилась', 'Не очень']))
+        else:
+            texts.append('Завершить сессию')
     else:
-        texts.append('Подписаться')
-    if (user_object.get('coach_state', {}) or {}).get('is_active'):
-        texts.append('Завершить сессию')
-    else:
+        texts.append('Хочу вопрос!')
+        if user_object.get('subscribed'):
+            texts.append('Отписаться'),
+        else:
+            texts.append('Подписаться')
         texts.append('Хочу коуч-сессию')
 
     if intent in {Intents.HELP, Intents.INTRO}:
@@ -139,12 +147,17 @@ def classify_text(text, user_object=None):
         return Intents.UNSUBSCRIBE
 
     # continue scenarios
+    coach_state = user_object.get('coach_state') or {}
     if user_object.get('last_intent') in {Intents.GROW_COACH, Intents.GROW_COACH_INTRO}:
-        if user_object.get('coach_state').get('is_active'):
+        if coach_state.get('is_active'):
             # intent transitions within coach scenario are different
             if re.match('^.*(зак[оа]нч|заверш|прекра[тщ]).*(сессию|ко[ау]ч).*$', normalized):
                 return Intents.GROW_COACH_EXIT
+            if coach_state.get('ask_feedback'):
+                return Intents.GROW_COACH_FEEDBACK
             return Intents.GROW_COACH
+    if coach_state.get('ask_feedback'):  # we need this additional 'if' after forcing exit from coach session
+        return Intents.GROW_COACH_FEEDBACK
 
     # substrings
     if 'подпис' in normalized:
