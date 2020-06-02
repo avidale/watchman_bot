@@ -5,6 +5,8 @@ import requests
 
 from telebot import types
 
+PUNCT = set('.?,;!:')
+
 
 EMPTY_STATE = {
     'coach_state': {},
@@ -199,10 +201,19 @@ def classify_text(text, user_object=None):
     return Intents.OTHER
 
 
+def remove_spaces(text):
+    result = []
+    for i, s in enumerate(text.split()):
+        if s[0] not in PUNCT and len(result) > 0:
+            result.append(' ')
+        result.append(s)
+    return ''.join(result)
+
+
 def reply_with_boltalka(text, user_object=None):
     r = requests.post(
         "https://boltalka-as-a-service.herokuapp.com/boltalka_api",
         data=json.dumps({'utterance': text}),
         headers={'content-type': 'application/json'}
     )
-    return json.loads(r.text)['response']
+    return remove_spaces(json.loads(r.text)['response']).capitalize()
