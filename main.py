@@ -20,6 +20,8 @@ from pymongo import MongoClient
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 from grow import reply_with_coach
 
+from bandit import create_weights
+
 
 if os.getenv('SENTRY_DSN', None) is not None:
     sentry_sdk.init(os.environ['SENTRY_DSN'])
@@ -92,7 +94,7 @@ def web_hook():
     return "!", 200
 
 
-def generate_question():
+def generate_question(text_weights=None):
     rnd = random.random()
     if rnd > 0.9:
         return parables.get_random_news(ask_opinion=True, topic='random')
@@ -101,13 +103,18 @@ def generate_question():
     elif rnd > 0.7:
         return daytoday.get_random_event(ask_opinion=True)
     else:
-        return random.choice(LONGLIST)
+        if text_weights is None:
+            return random.choice(LONGLIST)
+        else:
+            return random.choices(LONGLIST, weights=text_weights)[0]
 
 
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
     today_date = str(datetime.today())[:10]
+    weights = create_weights(LONGLIST, collection=mongo_messages)
+
     for user in mongo_users.find():
         user_id = user.get('tg_id')
         num_unanswered = user.get('num_unanswered', 0)
@@ -122,7 +129,7 @@ def wake_up():
                 continue
         print("Writing to user '{}'".format(user_id))
         req_id = str(uuid.uuid4())
-        utterance = generate_question()
+        utterance = generate_question(text_weights=weights)
         intent = Intents.PUSH_QUESTION
 
         if num_unanswered >= 30:
