@@ -8,6 +8,7 @@ import os
 import random
 import sentry_sdk
 import uuid
+import yaml
 
 import dialogue_manager
 import parables
@@ -48,6 +49,18 @@ mongo_messages = mongo_db.get_collection('messages')
 PROCESSED_MESSAGES = set()
 
 
+with open('data/many_questions.txt', 'r', encoding='utf-8') as f:
+    LONGLIST = [
+        q for q in f.readlines()
+        if not q.strip().startswith('#')
+           and not q.strip().startswith('/')
+           and len(q.strip()) >= 5
+    ]
+
+with open('data/special_questions.yaml', 'r', encoding='utf-8') as f:
+    special_questions = yaml.safe_load(f)
+
+
 def get_or_insert_user(tg_user=None, tg_uid=None):
     if tg_user is not None:
         uid = tg_user.id
@@ -69,15 +82,6 @@ def get_or_insert_user(tg_user=None, tg_uid=None):
     )
     mongo_users.insert_one(new_user)
     return new_user
-
-
-with open('many_questions.txt', 'r', encoding='utf-8') as f:
-    LONGLIST = [
-        q for q in f.readlines()
-        if not q.strip().startswith('#')
-           and not q.strip().startswith('/')
-           and len(q.strip()) >= 5
-    ]
 
 
 @server.route("/" + TELEBOT_URL)
@@ -103,6 +107,7 @@ def generate_question():
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
+    today_date = str(datetime.today())[:10]
     for user in mongo_users.find():
         user_id = user.get('tg_id')
         num_unanswered = user.get('num_unanswered', 0)
@@ -149,6 +154,14 @@ def wake_up():
                 'Последние несколько дней мне кажется, что я пишу в пустоту. Что произошло?',
             ])
             intent = Intents.PUSH_MISS_YOU
+
+        if today_date in special_questions:
+            intent = Intents.PUSH_SPECIAL
+            if isinstance(special_questions[today_date], list):
+                utterance = random.choice(special_questions[today_date])
+            else:
+                utterance = special_questions[today_date]
+
         for attempt in range(3):
             try:
                 bot.send_message(

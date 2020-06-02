@@ -24,6 +24,7 @@ class Intents:
     WANT_QUESTION = 'want_question'
     OTHER = 'other'
     PUSH_QUESTION = 'push_question'
+    PUSH_SPECIAL = 'push_special'
     PUSH_MISS_YOU = 'push_miss_you'
     PUSH_UNSUBSCRIBE = 'push_unsubscribe'
     PUSH_ASK_FEEDBACK = 'push_ask_for_feedback'
