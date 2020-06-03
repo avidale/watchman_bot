@@ -112,6 +112,7 @@ def generate_question(text_weights=None):
 @server.route("/wakeup/")
 def wake_up():
     web_hook()
+    reply_with_boltalka('Попытка заранее разбудить болталку', user_object={})
     today_date = str(datetime.today())[:10]
     weights = create_weights(LONGLIST, collection=mongo_messages)
 
