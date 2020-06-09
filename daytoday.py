@@ -66,6 +66,8 @@ def get_today_events(url=SITE_ROOT):
     r.encoding = r.apparent_encoding
     day = BeautifulSoup(r.text, features='lxml')
     listing = day.find('div', {'class': 'listing_wr'})
+    if not listing:
+        return []
     for d in listing.findAll('div', {'itemprop': ['acceptedAnswer', 'suggestedAnswer']}):
         doc = {
             'text': re.sub('\\d+ (года?|лет)$', '', d.text),
@@ -87,6 +89,8 @@ def is_like_religion(text):
 @opinions
 def get_random_event(url=SITE_ROOT):
     events = get_today_events(url=url)
+    if not events:
+        return 'Я пытался понять, какой сегодня день, и не понял. Вы можете мне помочь?'
     w = [
         e['upvotes'] ** 0.5 * (0.1 if is_like_religion(e['event']) else 1)
         for e in events
