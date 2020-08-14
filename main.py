@@ -34,6 +34,8 @@ server = Flask(__name__)
 TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = 'https://the-watchman-bot.herokuapp.com/'
 
+SECRET = os.getenv('SECRET', 'mfrw7qy4as-]e0qs-ads;lkfua')
+
 # The API will not allow more than ~30 messages to different users per second
 TIMEOUT_BETWEEN_MESSAGES = 0.5
 
@@ -109,7 +111,7 @@ def generate_question(text_weights=None):
             return random.choices(LONGLIST, weights=text_weights)[0]
 
 
-@server.route("/wakeup/")
+@server.route("/{SECRET}/wakeup/")
 def wake_up():
     web_hook()
     reply_with_boltalka('Попытка заранее разбудить болталку', user_object={})
@@ -175,7 +177,8 @@ def wake_up():
                 bot.send_message(
                     user_id, utterance,
                     reply_markup=dialogue_manager.make_like_dislike_buttons(req_id=req_id),
-                    parse_mode='html', disable_web_page_preview=True,
+                    parse_mode='html',
+                    disable_web_page_preview=True,
                 )
                 break
             except telebot.apihelper.ApiException as e:
