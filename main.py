@@ -111,7 +111,7 @@ def generate_question(text_weights=None):
             return random.choices(LONGLIST, weights=text_weights)[0]
 
 
-@server.route("/{SECRET}/wakeup/")
+@server.route(f"/{SECRET}/wakeup/")
 def wake_up():
     web_hook()
     reply_with_boltalka('Попытка заранее разбудить болталку', user_object={})
