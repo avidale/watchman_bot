@@ -9,3 +9,4 @@ xmltodict
 mongomock
 lxml
 pymorphy2
+dnspython
