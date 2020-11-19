@@ -3,6 +3,7 @@
 import argparse
 import telebot
 import time
+import logging
 import mongomock
 import os
 import random
@@ -17,10 +18,14 @@ import daytoday
 from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
+from telebot.apihelper import ApiException
 from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
 from grow import reply_with_coach
 
 from bandit import create_weights
+
+
+logger = logging.getLogger(__name__)
 
 
 if os.getenv('SENTRY_DSN', None) is not None:
@@ -288,7 +293,10 @@ def callback_query(call):
         return
     req_id, sentiment = payload.split('_', 1)
     mongo_messages.update_one({'req_id': req_id, 'from_user': False}, {'$set': {'feedback': sentiment}})
-    bot.answer_callback_query(call.id, "Фидбек принят!")
+    try:
+        bot.answer_callback_query(call.id, "Фидбек принят!")
+    except ApiException as e:
+        logger.warning('Api exception when answering callback query: {}'.format(e))
 
     user_object = get_or_insert_user(call.from_user)
     if user_object:
