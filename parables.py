@@ -1,4 +1,6 @@
 import random
+from json import JSONDecodeError
+
 import requests
 import xmltodict
 
@@ -28,13 +30,23 @@ def first_lower(s):
     return s[0].lower() + s[1:]
 
 
-@opinions
-def get_random_citation():
+def get_citation():
     r = requests.get('http://api.forismatic.com/api/1.0/?method=getQuote&format=json')
     if not r.ok:
+        return
+    try:
+        j = r.json()
+    except JSONDecodeError:
+        j = None
+    return j
+
+
+@opinions
+def get_random_citation():
+    j = get_citation()
+    if not j:
         return 'Хм, что-то у меня не нашлось цитаты. \n' \
                'Но вы можете попросить меня рассказать притчу.'
-    j = r.json()
     if j['quoteAuthor']:
         intro = random.choice([
             'Вот что однажды сказал(а) {}.',
