@@ -109,7 +109,7 @@ def generate_question(text_weights=None):
         return parables.get_random_citation(ask_opinion=True)
     elif rnd > 0.75:
         return daytoday.get_random_event(ask_opinion=True)
-    elif rnd > 0.6:
+    elif rnd > 0.4:
         return make_new_question()
     else:
         if text_weights is None:
@@ -120,8 +120,11 @@ def generate_question(text_weights=None):
 
 def make_new_question():
     # generate a question with a language model using 10 random languages as examples
-    examples = [random.choice(LONGLIST) for i in range(10)]
-    return reply_with_boltalka(text=random.choice(LONGLIST), user_object={'history': examples})
+    examples = [random.choice(LONGLIST).strip() for i in range(10)]
+    text = reply_with_boltalka(text=random.choice(LONGLIST), user_object={'history': examples})
+    if '?' not in text:
+        return random.choice(LONGLIST)
+    return text.split('?')[0] + '?'
 
 
 @server.route(f"/{SECRET}/wakeup/")
