@@ -121,8 +121,7 @@ def generate_question(text_weights=None):
 def make_new_question():
     # generate a question with a language model using 10 random languages as examples
     examples = [random.choice(LONGLIST) for i in range(10)]
-    prefix = ''.join(e + '\n - ' for e in examples)
-    return reply_with_boltalka(text=prefix, user_object={})
+    return reply_with_boltalka(text=random.choice(LONGLIST), user_object={'history': examples})
 
 
 @server.route(f"/{SECRET}/wakeup/")
