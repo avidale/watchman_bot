@@ -211,9 +211,15 @@ def remove_spaces(text):
 
 
 def reply_with_boltalka(text, user_object=None):
+    h = (user_object or {}).get('history', []) + [text]
+    req_data = {
+        'utterance': text,
+        'history': h,
+    }
     r = requests.post(
-        "https://boltalka-as-a-service.herokuapp.com/boltalka_api",
-        data=json.dumps({'utterance': text}),
+        # "https://boltalka-as-a-service.herokuapp.com/boltalka_api",
+        'http://dialogue-as-a-service.toys.dialogic.digital/boltalka_api',
+        data=json.dumps(req_data),
         headers={'content-type': 'application/json'}
     )
     return remove_spaces(json.loads(r.text)['response']).capitalize()

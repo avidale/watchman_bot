@@ -226,6 +226,7 @@ def process_message(message):
         return
     PROCESSED_MESSAGES.add(message.message_id)
     user_object = get_or_insert_user(message.from_user)
+    user_object['history'] = user_object['history'] or []
     user_id = message.chat.id
     req_id = str(uuid.uuid4())
     now = str(datetime.utcnow())
@@ -273,6 +274,10 @@ def process_message(message):
     the_update['$set']['last_intent'] = intent
     the_update['$set']['num_unanswered'] = 0
     the_update['$set']['last_message_time'] = now
+
+    new_history = user_object['history'] + [message.text or ''] + [response]
+    the_update['$set']['history'] = new_history[-10:]
+
     mongo_users.update_one({'tg_id': message.from_user.id}, the_update)
     user_object = get_or_insert_user(tg_uid=message.from_user.id)
 
