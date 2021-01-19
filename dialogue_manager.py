@@ -24,6 +24,7 @@ class Intents:
     SUBSCRIBE = 'subscribe'
     UNSUBSCRIBE = 'unsubscribe'
     WANT_QUESTION = 'want_question'
+    UNIQUE_QUESTION = 'unique_question'
     OTHER = 'other'
     PUSH_QUESTION = 'push_question'
     PUSH_SPECIAL = 'push_special'
@@ -183,6 +184,8 @@ def classify_text(text, user_object=None):
     if re.match('^(помоги.*|(хочу|начать|начни|начнем) ко[уа]ч[ -]*сессию.*|.*обсуд.*(проблем|дел).*)$', normalized):
         return Intents.GROW_COACH_INTRO
     if 'вопрос' in normalized:
+        if 'генер' in normalized:
+            return Intents.UNIQUE_QUESTION
         return Intents.WANT_QUESTION
     if 'цитат' in normalized or 'высказывани' in normalized:
         return Intents.CITATION

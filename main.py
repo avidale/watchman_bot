@@ -107,13 +107,22 @@ def generate_question(text_weights=None):
         return parables.get_random_news(ask_opinion=True, topic='random')
     elif rnd > 0.8:
         return parables.get_random_citation(ask_opinion=True)
-    elif rnd > 0.7:
+    elif rnd > 0.75:
         return daytoday.get_random_event(ask_opinion=True)
+    elif rnd > 0.6:
+        return make_new_question()
     else:
         if text_weights is None:
             return random.choice(LONGLIST)
         else:
             return random.choices(LONGLIST, weights=text_weights)[0]
+
+
+def make_new_question():
+    # generate a question with a language model using 10 random languages as examples
+    examples = [random.choice(LONGLIST) for i in range(10)]
+    prefix = ''.join(e + '\n - ' for e in examples)
+    return reply_with_boltalka(text=prefix, user_object={})
 
 
 @server.route(f"/{SECRET}/wakeup/")
@@ -248,6 +257,8 @@ def process_message(message):
         response = dialogue_manager.REPLY_HELP + '\n' + dialogue_manager.REPLY_INTRO
     elif intent == Intents.WANT_QUESTION:
         response = generate_question()
+    elif intent == Intents.UNIQUE_QUESTION:
+        response = make_new_question()
     elif intent == Intents.SUBSCRIBE:
         response = "Теперь вы подписаны на ежедневные вопросы!"
         the_update = {"$set": {'subscribed': True}}
