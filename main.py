@@ -60,7 +60,7 @@ PROCESSED_MESSAGES = set()
 
 with open('data/many_questions.txt', 'r', encoding='utf-8') as f:
     LONGLIST = [
-        q for q in f.readlines()
+        q.strip() for q in f.readlines()
         if not q.strip().startswith('#')
            and not q.strip().startswith('/')
            and len(q.strip()) >= 5
