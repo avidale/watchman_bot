@@ -226,7 +226,7 @@ def process_message(message):
         return
     PROCESSED_MESSAGES.add(message.message_id)
     user_object = get_or_insert_user(message.from_user)
-    user_object['history'] = user_object['history'] or []
+    user_object['history'] = user_object.get('history') or []
     user_id = message.chat.id
     req_id = str(uuid.uuid4())
     now = str(datetime.utcnow())
