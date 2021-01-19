@@ -176,6 +176,10 @@ def classify_text(text, user_object=None):
     if coach_state.get('ask_feedback'):  # we need this additional 'if' after forcing exit from coach session
         return Intents.GROW_COACH_FEEDBACK
 
+    verbs = {
+        'хочу', "давай", "задай", "следующ", "расскаж", "дальше", "еще", "задавай",
+    }
+
     # substrings
     if 'подпис' in normalized:
         return Intents.SUBSCRIBE
@@ -184,11 +188,15 @@ def classify_text(text, user_object=None):
     if re.match('^(помоги.*|(хочу|начать|начни|начнем) ко[уа]ч[ -]*сессию.*|.*обсуд.*(проблем|дел).*)$', normalized):
         return Intents.GROW_COACH_INTRO
     if 'вопрос' in normalized:
-        if 'генер' in normalized:
+        if 'сгенерируй' in normalized:
             return Intents.UNIQUE_QUESTION
-        return Intents.WANT_QUESTION
+        for k in verbs:
+            if k in normalized:
+                return Intents.WANT_QUESTION
     if 'цитат' in normalized or 'высказывани' in normalized:
-        return Intents.CITATION
+        for k in verbs:
+            if k in normalized:
+                return Intents.CITATION
     if 'притч' in normalized or 'историю' in normalized or 'сказк' in normalized:
         return Intents.PARABLE
     if normalized in {'помощь', 'справка', 'хелп', 'help'}:
