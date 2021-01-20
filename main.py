@@ -251,6 +251,9 @@ def process_message(message):
     if message.message_id in PROCESSED_MESSAGES:
         return
     PROCESSED_MESSAGES.add(message.message_id)
+
+    bot.send_chat_action(message.chat.id, 'typing')
+
     user_object = get_or_insert_user(message.from_user)
     user_object['history'] = user_object.get('history') or []
     user_id = message.chat.id
