@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import argparse
+from typing import Tuple
+
 import telebot
 import time
 import logging
@@ -19,11 +21,10 @@ from datetime import datetime
 from flask import Flask, request
 from pymongo import MongoClient
 from telebot.apihelper import ApiException
-from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents
+from dialogue_manager import classify_text, make_suggests, reply_with_boltalka, Intents, QTypes
 from grow import reply_with_coach
 
-from bandit import create_weights
-
+from bandit import create_weights, unsullied_candidates
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,10 @@ with open('data/special_questions.yaml', 'r', encoding='utf-8') as f:
     special_questions = yaml.safe_load(f)
 
 
+UNSULLIED = unsullied_candidates(texts=LONGLIST, collection=mongo_messages)
+WEIGHTS = create_weights(texts=LONGLIST, collection=mongo_messages)
+
+
 def get_or_insert_user(tg_user=None, tg_uid=None):
     if tg_user is not None:
         uid = tg_user.id
@@ -101,21 +106,25 @@ def web_hook():
     return "!", 200
 
 
-def generate_question(text_weights=None):
+def generate_question(text_weights=None, unsullied_texts=None) -> Tuple[str, str]:
     rnd = random.random()
     if rnd > 0.9:
-        return parables.get_random_news(ask_opinion=True, topic='random')
+        return parables.get_random_news(ask_opinion=True, topic='random'), QTypes.NEWS
     elif rnd > 0.8:
-        return parables.get_random_citation(ask_opinion=True)
+        return parables.get_random_citation(ask_opinion=True), QTypes.CITATION
     elif rnd > 0.75:
-        return daytoday.get_random_event(ask_opinion=True)
+        return daytoday.get_random_event(ask_opinion=True), QTypes.DAY_TODAY
     elif rnd > 0.4:
-        return make_new_question()
+        return make_new_question(), QTypes.UNIQUE_QUESTION
     else:
-        if text_weights is None:
-            return random.choice(LONGLIST)
+        if unsullied_texts and random.random() < 0.5:
+            # choose from "good or unexplored" questions
+            return random.choice(unsullied_texts), QTypes.UNSULLIED
         else:
-            return random.choices(LONGLIST, weights=text_weights)[0]
+            if text_weights:
+                return random.choices(LONGLIST, weights=text_weights)[0], QTypes.WEIGHTED
+            else:
+                return random.choice(LONGLIST), QTypes.UNIFORM
 
 
 def make_new_question():
@@ -133,6 +142,7 @@ def wake_up():
     reply_with_boltalka('Попытка заранее разбудить болталку', user_object={})
     today_date = str(datetime.today())[:10]
     weights = create_weights(LONGLIST, collection=mongo_messages)
+    unsullied = unsullied_candidates(LONGLIST, collection=mongo_messages)
 
     for user in mongo_users.find():
         user_id = user.get('tg_id')
@@ -148,7 +158,7 @@ def wake_up():
                 continue
         print("Writing to user '{}'".format(user_id))
         req_id = str(uuid.uuid4())
-        utterance = generate_question(text_weights=weights)
+        utterance, method = generate_question(text_weights=weights, unsullied_texts=unsullied)
         intent = Intents.PUSH_QUESTION
 
         if num_unanswered >= 30:
@@ -184,8 +194,10 @@ def wake_up():
                 'Давайте договоримся, что вы будете время от времени отвечать на мои вопросы?',
             ])
             intent = Intents.PUSH_MISS_YOU
+            method = Intents.PUSH_MISS_YOU
         elif today_date in special_questions:
             intent = Intents.PUSH_SPECIAL
+            method = Intents.PUSH_SPECIAL
             if isinstance(special_questions[today_date], list):
                 utterance = random.choice(special_questions[today_date])
             else:
@@ -223,7 +235,7 @@ def wake_up():
                     raise e
         msg = dict(
             text=utterance, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
-            push=True, req_id=req_id, intent=intent,
+            push=True, req_id=req_id, intent=intent, method=method,
         )
         mongo_messages.insert_one(msg)
 
@@ -256,14 +268,17 @@ def process_message(message):
         # interrupt the coach scenario if we are out of it
         the_update = {"$set": {'coach_state': {}}}
 
+    method = None
+
     if intent == Intents.HELP:
         response = dialogue_manager.REPLY_HELP
     elif intent == Intents.INTRO:
         response = dialogue_manager.REPLY_HELP + '\n' + dialogue_manager.REPLY_INTRO
     elif intent == Intents.WANT_QUESTION:
-        response = generate_question()
+        response, method = generate_question(text_weights=WEIGHTS, unsullied_texts=UNSULLIED)
     elif intent == Intents.UNIQUE_QUESTION:
         response = make_new_question()
+        method = QTypes.UNIQUE_QUESTION
     elif intent == Intents.SUBSCRIBE:
         response = "Теперь вы подписаны на ежедневные вопросы!"
         the_update = {"$set": {'subscribed': True}}
@@ -274,14 +289,18 @@ def process_message(message):
         response, the_update = reply_with_coach(message.text, user_object=user_object, intent=intent)
     elif intent == Intents.PARABLE:
         response = parables.get_random_parable()
+        method = QTypes.PARABLE
     elif intent == Intents.CITATION:
         response = parables.get_random_citation()
+        method = QTypes.CITATION
     elif intent == Intents.CONTACT_DEV:
         response = 'Напишите моему разработчику напрямую. Это @cointegrated. Не стесняйтесь!'
     elif intent == Intents.NEWS:
         response = parables.get_random_news(ask_opinion=(random.random() < 0.2), topic='random')
+        method = QTypes.NEWS
     elif intent == Intents.DAY_TODAY:
         response = daytoday.get_random_event(ask_opinion=(random.random() < 0.4))
+        method = QTypes.UNIFORM
     else:
         response = reply_with_boltalka(message.text, user_object)
 
@@ -299,7 +318,7 @@ def process_message(message):
 
     msg = dict(
         text=response, user_id=user_id, from_user=False, timestamp=str(datetime.utcnow()),
-        req_id=req_id, push=False, intent=intent,
+        req_id=req_id, push=False, intent=intent, method=method,
     )
     mongo_messages.insert_one(msg)
     suggests = make_suggests(text=response, intent=intent, user_object=user_object, req_id=req_id)
@@ -326,7 +345,7 @@ def callback_query(call):
         if sentiment == 'pos':
             likes_streak += 1
             if likes_streak % 5 == 0 and random.random() < 0.4:
-                intent=Intents.PUSH_ASK_FEEDBACK
+                intent = Intents.PUSH_ASK_FEEDBACK
                 utterance = 'Я рад, что вам нравятся мои вопросы. ' \
                             'Весьма приятно чувствовать себя нужным.' \
                             '\nЯ буду очень благодарен, если вы про меня расскажете где-нибудь в соцсетях (:'

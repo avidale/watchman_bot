@@ -37,6 +37,19 @@ class Intents:
     CONTACT_DEV = 'contact_developer'
 
 
+class QTypes:
+    NEWS = 'news'
+    CITATION = 'citation'
+    PARABLE = 'parable'
+    DAY_TODAY = 'today_events'
+    UNIQUE_QUESTION = 'unique_question'
+    UNSULLIED = 'unsullied'
+    UNIFORM = 'uniform'
+    WEIGHTED = 'weighted'
+    PUSH_SPECIAL = 'push_special'
+    PUSH_MISS_YOU = 'push_miss_you'
+
+
 REPLY_HELP = """
 Здравствуйте!
 Я создан, чтобы регулярно задавать вам вопросы. 
@@ -87,8 +100,8 @@ def make_like_dislike_buttons(req_id=0, wtf=False):
 
 
 def make_suggests(text='', intent=Intents.OTHER, user_object=None, req_id=0):
-    # for 30% of questions, we generate like-dislike buttons
-    if (intent == Intents.WANT_QUESTION or intent == Intents.NEWS) and random.random() < 0.7:
+    # for 70% of questions, we generate like-dislike buttons
+    if intent in {Intents.WANT_QUESTION, Intents.NEWS, Intents.UNIQUE_QUESTION} and random.random() < 0.7:
         return make_like_dislike_buttons(req_id=req_id)
     # for 30% of conversational messages, we generate like-dislike buttons with the third option
     if intent == Intents.OTHER and random.random() < 0.7:
