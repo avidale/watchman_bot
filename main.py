@@ -239,7 +239,10 @@ def wake_up():
         )
         mongo_messages.insert_one(msg)
 
-        the_update = {'$set': {'num_unanswered': num_unanswered + 1}}
+        the_update = {'$set': {
+            'num_unanswered': num_unanswered + 1,
+            'history': [utterance],
+        }}
         the_update['$set'].update(dialogue_manager.EMPTY_STATE)
         mongo_users.update_one({'tg_id': user_id}, the_update)
         time.sleep(TIMEOUT_BETWEEN_MESSAGES)
@@ -374,7 +377,7 @@ parser = argparse.ArgumentParser(description='Run the bot')
 parser.add_argument('--poll', action='store_true')
 
 
-def main_new():
+def main():
     args = parser.parse_args()
     if args.poll:
         bot.remove_webhook()
@@ -386,4 +389,4 @@ def main_new():
 
 
 if __name__ == '__main__':
-    main_new()
+    main()
