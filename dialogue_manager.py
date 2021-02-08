@@ -246,4 +246,4 @@ def reply_with_boltalka(text, user_object=None):
         data=json.dumps(req_data),
         headers={'content-type': 'application/json'}
     )
-    return remove_spaces(json.loads(r.text)['response']).capitalize()
+    return remove_spaces(json.loads(r.text)['response'])  # .capitalize()
