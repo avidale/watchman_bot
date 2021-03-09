@@ -109,22 +109,31 @@ def web_hook():
 def generate_question(text_weights=None, unsullied_texts=None) -> Tuple[str, str]:
     rnd = random.random()
     if rnd > 0.9:
-        return parables.get_random_news(ask_opinion=True, topic='random'), QTypes.NEWS
-    elif rnd > 0.8:
-        return parables.get_random_citation(ask_opinion=True), QTypes.CITATION
-    elif rnd > 0.75:
-        return daytoday.get_random_event(ask_opinion=True), QTypes.DAY_TODAY
-    elif rnd > 0.4:
+        try:
+            return parables.get_random_news(ask_opinion=True, topic='random'), QTypes.NEWS
+        except:
+            rnd = 0
+    if rnd > 0.8:
+        try:
+            return parables.get_random_citation(ask_opinion=True), QTypes.CITATION
+        except:
+            rnd = 0
+    if rnd > 0.75:
+        try:
+            return daytoday.get_random_event(ask_opinion=True), QTypes.DAY_TODAY
+        except:
+            rnd = 0
+    if rnd > 0.4:
         return make_new_question(), QTypes.UNIQUE_QUESTION
+    # else:
+    if unsullied_texts and random.random() < 0.5:
+        # choose from "good or unexplored" questions
+        return random.choice(unsullied_texts), QTypes.UNSULLIED
     else:
-        if unsullied_texts and random.random() < 0.5:
-            # choose from "good or unexplored" questions
-            return random.choice(unsullied_texts), QTypes.UNSULLIED
+        if text_weights:
+            return random.choices(LONGLIST, weights=text_weights)[0], QTypes.WEIGHTED
         else:
-            if text_weights:
-                return random.choices(LONGLIST, weights=text_weights)[0], QTypes.WEIGHTED
-            else:
-                return random.choice(LONGLIST), QTypes.UNIFORM
+            return random.choice(LONGLIST), QTypes.UNIFORM
 
 
 def make_new_question():
