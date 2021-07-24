@@ -246,4 +246,6 @@ def reply_with_boltalka(text, user_object=None):
         data=json.dumps(req_data),
         headers={'content-type': 'application/json'}
     )
-    return remove_spaces(json.loads(r.text)['response'])  # .capitalize()
+    if r.status_code == 200 and r.text and r.json():
+        return remove_spaces(r.json()['response'])  # .capitalize()
+    return 'Понятно... Простите, о чём вы говорили?'
