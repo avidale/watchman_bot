@@ -87,10 +87,13 @@ def is_like_religion(text):
 
 
 @opinions
-def get_random_event(url=SITE_ROOT):
+def get_random_event(url=SITE_ROOT, return_empty=False):
     events = get_today_events(url=url)
     if not events:
-        return 'Я пытался понять, какой сегодня день, и не понял. Вы можете мне помочь?'
+        if return_empty:
+            return
+        else:
+            return 'Я пытался понять, какой сегодня день, и не понял. Вы можете мне помочь?'
     w = [
         e['upvotes'] ** 0.5 * (0.1 if is_like_religion(e['event']) else 1)
         for e in events

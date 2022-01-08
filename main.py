@@ -120,7 +120,11 @@ def generate_question(text_weights=None, unsullied_texts=None) -> Tuple[str, str
             rnd = 0
     if rnd > 0.85:
         try:
-            return daytoday.get_random_event(ask_opinion=True), QTypes.DAY_TODAY
+            text, text_type = daytoday.get_random_event(ask_opinion=True, return_empty=True), QTypes.DAY_TODAY
+            if text:
+                return text, text_type
+            else:
+                rnd = 0
         except:
             rnd = 0
     if rnd > 0.5:
