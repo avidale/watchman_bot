@@ -406,6 +406,7 @@ def main():
         # rerun the bot every 24 hours
         scheduler = BackgroundScheduler()
         scheduler.add_job(wake_up, 'cron', hour=18, minute=30)  # I hope this is UTCDockerfileDockerfile
+        scheduler.start()
 
         server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 

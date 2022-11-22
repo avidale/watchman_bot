@@ -106,3 +106,5 @@ migrations/
 .ipyng_checkpoints
 pymongo.ipynb
 *.ipynb
+
+secret
