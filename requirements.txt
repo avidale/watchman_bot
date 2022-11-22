@@ -10,3 +10,4 @@ mongomock
 lxml
 pymorphy2
 dnspython
+apscheduler

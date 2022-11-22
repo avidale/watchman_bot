@@ -13,6 +13,8 @@ import sentry_sdk
 import uuid
 import yaml
 
+from apscheduler.schedulers.background import BackgroundScheduler
+
 import dialogue_manager
 import parables
 import daytoday
@@ -39,6 +41,7 @@ bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
 TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = 'https://the-watchman-bot.herokuapp.com/'
+BASE_URL = 'https://the-watchman-bot.toys.dialogic.digital/'
 
 SECRET = os.getenv('SECRET', 'mfrw7qy4as-]e0qs-ads;lkfua')
 
@@ -399,6 +402,11 @@ def main():
     else:
         # this branch is intended to run only in the production environment (e.g. Heroku web app)
         web_hook()
+
+        # rerun the bot every 24 hours
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(wake_up, 'cron', hour=18, minute=30)  # I hope this is UTCDockerfileDockerfile
+
         server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 
