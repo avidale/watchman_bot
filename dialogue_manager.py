@@ -234,6 +234,9 @@ def remove_spaces(text):
     return ''.join(result)
 
 
+DUMMY_CHITCHAT_RESPONSE = 'Понятно... Простите, о чём вы говорили?'
+
+
 def reply_with_boltalka(text, user_object=None):
     h = (user_object or {}).get('history', []) + [text]
     req_data = {
@@ -248,4 +251,4 @@ def reply_with_boltalka(text, user_object=None):
     )
     if r.status_code in {200, 201} and r.text and r.json():
         return remove_spaces(r.json()['response'])  # .capitalize()
-    return 'Понятно... Простите, о чём вы говорили?'
+    return DUMMY_CHITCHAT_RESPONSE

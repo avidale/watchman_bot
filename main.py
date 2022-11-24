@@ -130,7 +130,7 @@ def generate_question(text_weights=None, unsullied_texts=None) -> Tuple[str, str
                 rnd = 0
         except:
             rnd = 0
-    if rnd > 0.5:
+    if rnd > 0.5 and False:  # turn this off, because I am turning off boltalka.
         return make_new_question(), QTypes.UNIQUE_QUESTION
 
     # else:
@@ -148,7 +148,7 @@ def make_new_question():
     # generate a question with a language model using 10 random languages as examples
     examples = [random.choice(LONGLIST).strip() for i in range(10)]
     text = reply_with_boltalka(text=random.choice(LONGLIST), user_object={'history': examples})
-    if '?' not in text:
+    if '?' not in text or text == dialogue_manager.DUMMY_CHITCHAT_RESPONSE:
         return random.choice(LONGLIST)
     return text.split('?')[0] + '?'
 
